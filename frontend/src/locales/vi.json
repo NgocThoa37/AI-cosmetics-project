@@ -1,0 +1,62 @@
+{
+  "common": {
+    "home": "Trang chủ",
+    "products": "Sản phẩm",
+    "cart": "Giỏ hàng",
+    "checkout": "Thanh toán",
+    "account": "Tài khoản",
+    "login": "Đăng nhập",
+    "register": "Đăng ký",
+    "logout": "Đăng xuất",
+    "search": "Tìm kiếm",
+    "add_to_cart": "Thêm vào giỏ",
+    "buy_now": "Mua ngay",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "confirm": "Xác nhận",
+    "delete": "Xóa",
+    "edit": "Sửa",
+    "view": "Xem",
+    "loading": "Đang tải...",
+    "no_data": "Không có dữ liệu",
+    "error": "Có lỗi xảy ra"
+  },
+  "product": {
+    "detail": "Chi tiết sản phẩm",
+    "description": "Mô tả",
+    "ingredients": "Thành phần",
+    "how_to_use": "Hướng dẫn sử dụng",
+    "reviews": "Đánh giá",
+    "related_products": "Sản phẩm liên quan",
+    "out_of_stock": "Hết hàng",
+    "in_stock": "Còn hàng",
+    "quantity": "Số lượng"
+  },
+  "cart": {
+    "empty": "Giỏ hàng trống",
+    "total": "Tổng cộng",
+    "subtotal": "Tạm tính",
+    "shipping_fee": "Phí vận chuyển",
+    "free_shipping": "Miễn phí vận chuyển",
+    "checkout": "Tiến hành thanh toán",
+    "continue_shopping": "Tiếp tục mua sắm"
+  },
+  "order": {
+    "pending": "Chờ xác nhận",
+    "confirmed": "Đã xác nhận",
+    "shipping": "Đang giao hàng",
+    "delivered": "Đã giao hàng",
+    "cancelled": "Đã hủy",
+    "order_code": "Mã đơn hàng",
+    "order_date": "Ngày đặt",
+    "total_amount": "Tổng tiền",
+    "shipping_address": "Địa chỉ giao hàng"
+  },
+  "account": {
+    "profile": "Hồ sơ cá nhân",
+    "addresses": "Địa chỉ giao hàng",
+    "orders": "Đơn hàng của tôi",
+    "change_password": "Đổi mật khẩu",
+    "notifications": "Thông báo"
+  }
+}

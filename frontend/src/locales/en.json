@@ -1,0 +1,62 @@
+{
+  "common": {
+    "home": "Home",
+    "products": "Products",
+    "cart": "Cart",
+    "checkout": "Checkout",
+    "account": "Account",
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "search": "Search",
+    "add_to_cart": "Add to Cart",
+    "buy_now": "Buy Now",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "loading": "Loading...",
+    "no_data": "No data",
+    "error": "An error occurred"
+  },
+  "product": {
+    "detail": "Product Details",
+    "description": "Description",
+    "ingredients": "Ingredients",
+    "how_to_use": "How to Use",
+    "reviews": "Reviews",
+    "related_products": "Related Products",
+    "out_of_stock": "Out of Stock",
+    "in_stock": "In Stock",
+    "quantity": "Quantity"
+  },
+  "cart": {
+    "empty": "Your cart is empty",
+    "total": "Total",
+    "subtotal": "Subtotal",
+    "shipping_fee": "Shipping Fee",
+    "free_shipping": "Free Shipping",
+    "checkout": "Proceed to Checkout",
+    "continue_shopping": "Continue Shopping"
+  },
+  "order": {
+    "pending": "Pending",
+    "confirmed": "Confirmed",
+    "shipping": "Shipping",
+    "delivered": "Delivered",
+    "cancelled": "Cancelled",
+    "order_code": "Order Code",
+    "order_date": "Order Date",
+    "total_amount": "Total Amount",
+    "shipping_address": "Shipping Address"
+  },
+  "account": {
+    "profile": "Profile",
+    "addresses": "Addresses",
+    "orders": "My Orders",
+    "change_password": "Change Password",
+    "notifications": "Notifications"
+  }
+}
