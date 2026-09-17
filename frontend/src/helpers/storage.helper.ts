@@ -36,3 +36,14 @@ export const removeRefreshToken = (): void => storage.remove(REFRESH_TOKEN_KEY);
 export const getUser = (): any => storage.get(USER_KEY);
 export const setUser = (user: any): void => storage.set(USER_KEY, user);
 export const removeUser = (): void => storage.remove(USER_KEY);
+
+export const ADMIN_TOKEN_KEY = 'admin_token';
+export const ADMIN_USER_KEY = 'admin_user';
+
+export const getAdminToken = (): string | null => storage.get<string>(ADMIN_TOKEN_KEY);
+export const setAdminToken = (token: string): void => storage.set(ADMIN_TOKEN_KEY, token);
+export const removeAdminToken = (): void => storage.remove(ADMIN_TOKEN_KEY);
+
+export const getAdminUser = (): any => storage.get(ADMIN_USER_KEY);
+export const setAdminUser = (user: any): void => storage.set(ADMIN_USER_KEY, user);
+export const removeAdminUser = (): void => storage.remove(ADMIN_USER_KEY);

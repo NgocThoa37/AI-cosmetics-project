@@ -1,14 +1,14 @@
 import { axiosClient } from '@/plugins/axios.config';
 import { 
   Account, Employee, Category, Product, ProductDetail, ProductImage,
-  Brand, ProductVariant, Order, Review, RevenueStat, BestSeller,
-  ApiResponse
+  Brand, Order, Review, RevenueStat, BestSeller, Color, Size,
+  ApiResponse, Customer
 } from '@/types/admin.types';
 
 const BASE_URL = '/admin';
 
 class AdminService {
-  // ==================== Accounts ====================
+  // ==================== ACCOUNTS ====================
   async getAccounts(): Promise<Account[]> {
     const res = await axiosClient.get<ApiResponse<Account[]>>(`${BASE_URL}/accounts`);
     return res.data.data;
@@ -25,7 +25,7 @@ class AdminService {
   }
 
   async updateAccount(id: string, data: Partial<Account>): Promise<Account> {
-    const res = await axiosClient.patch<ApiResponse<Account>>(`${BASE_URL}/accounts/${id}`, data);
+    const res = await axiosClient.put<ApiResponse<Account>>(`${BASE_URL}/accounts/${id}`, data);
     return res.data.data;
   }
 
@@ -38,7 +38,7 @@ class AdminService {
     await axiosClient.delete(`${BASE_URL}/accounts/${id}`);
   }
 
-  // ==================== Employees ====================
+  // ==================== EMPLOYEES ====================
   async getEmployees(): Promise<Employee[]> {
     const res = await axiosClient.get<ApiResponse<Employee[]>>(`${BASE_URL}/employees`);
     return res.data.data;
@@ -59,16 +59,36 @@ class AdminService {
     return res.data.data;
   }
 
-  async updateEmployeeStatus(id: string, status: string): Promise<Employee> {
-    const res = await axiosClient.patch<ApiResponse<Employee>>(`${BASE_URL}/employees/${id}/status`, { status });
-    return res.data.data;
-  }
-
   async deleteEmployee(id: string): Promise<void> {
     await axiosClient.delete(`${BASE_URL}/employees/${id}`);
   }
 
-  // ==================== Categories ====================
+  // ==================== CUSTOMERS ====================
+  async getCustomers(): Promise<Customer[]> {
+    const res = await axiosClient.get<ApiResponse<Customer[]>>(`${BASE_URL}/customers`);
+    return res.data.data;
+  }
+
+  async getCustomerById(id: string): Promise<Customer> {
+    const res = await axiosClient.get<ApiResponse<Customer>>(`${BASE_URL}/customers/${id}`);
+    return res.data.data;
+  }
+
+  async createCustomer(data: Partial<Customer>): Promise<Customer> {
+    const res = await axiosClient.post<ApiResponse<Customer>>(`${BASE_URL}/customers`, data);
+    return res.data.data;
+  }
+
+  async updateCustomer(id: string, data: Partial<Customer>): Promise<Customer> {
+    const res = await axiosClient.patch<ApiResponse<Customer>>(`${BASE_URL}/customers/${id}`, data);
+    return res.data.data;
+  }
+
+  async deleteCustomer(id: string): Promise<void> {
+    await axiosClient.delete(`${BASE_URL}/customers/${id}`);
+  }
+
+  // ==================== CATEGORIES ====================
   async getCategories(): Promise<Category[]> {
     const res = await axiosClient.get<ApiResponse<Category[]>>(`${BASE_URL}/categories`);
     return res.data.data;
@@ -89,99 +109,11 @@ class AdminService {
     return res.data.data;
   }
 
-  async updateCategoryStatus(id: string, status: string): Promise<Category> {
-    const res = await axiosClient.patch<ApiResponse<Category>>(`${BASE_URL}/categories/${id}/status`, { status });
-    return res.data.data;
-  }
-
   async deleteCategory(id: string): Promise<void> {
     await axiosClient.delete(`${BASE_URL}/categories/${id}`);
   }
 
-  // ==================== Products ====================
-  async getProducts(): Promise<Product[]> {
-    const res = await axiosClient.get<ApiResponse<Product[]>>(`${BASE_URL}/products`);
-    return res.data.data;
-  }
-
-  async getProductById(id: string): Promise<Product> {
-    const res = await axiosClient.get<ApiResponse<Product>>(`${BASE_URL}/products/${id}`);
-    return res.data.data;
-  }
-
-  async createProduct(data: Partial<Product>): Promise<Product> {
-    const res = await axiosClient.post<ApiResponse<Product>>(`${BASE_URL}/products`, data);
-    return res.data.data;
-  }
-
-  async updateProduct(id: string, data: Partial<Product>): Promise<Product> {
-    const res = await axiosClient.patch<ApiResponse<Product>>(`${BASE_URL}/products/${id}`, data);
-    return res.data.data;
-  }
-
-  async updateProductQuantity(id: string, quantity: number): Promise<void> {
-    await axiosClient.patch(`${BASE_URL}/products/${id}/quantity`, { quantity });
-  }
-
-  async updateProductStatus(id: string, status: string): Promise<void> {
-    await axiosClient.patch(`${BASE_URL}/products/${id}/status`, { status });
-  }
-
-  async deleteProduct(id: string): Promise<void> {
-    await axiosClient.delete(`${BASE_URL}/products/${id}`);
-  }
-
-  // ==================== Product Details ====================
-  async getProductDetails(): Promise<ProductDetail[]> {
-    const res = await axiosClient.get<ApiResponse<ProductDetail[]>>(`${BASE_URL}/products/details`);
-    return res.data.data;
-  }
-
-  async getProductDetailById(id: string): Promise<ProductDetail> {
-    const res = await axiosClient.get<ApiResponse<ProductDetail>>(`${BASE_URL}/products/details/${id}`);
-    return res.data.data;
-  }
-
-  async createProductDetail(data: Partial<ProductDetail>): Promise<ProductDetail> {
-    const res = await axiosClient.post<ApiResponse<ProductDetail>>(`${BASE_URL}/products/details`, data);
-    return res.data.data;
-  }
-
-  async updateProductDetail(id: string, data: Partial<ProductDetail>): Promise<ProductDetail> {
-    const res = await axiosClient.patch<ApiResponse<ProductDetail>>(`${BASE_URL}/products/details/${id}`, data);
-    return res.data.data;
-  }
-
-  async deleteProductDetail(id: string): Promise<void> {
-    await axiosClient.delete(`${BASE_URL}/products/details/${id}`);
-  }
-
-  // ==================== Product Images ====================
-  async getProductImages(): Promise<ProductImage[]> {
-    const res = await axiosClient.get<ApiResponse<ProductImage[]>>(`${BASE_URL}/products/images`);
-    return res.data.data;
-  }
-
-  async getProductImageById(id: string): Promise<ProductImage> {
-    const res = await axiosClient.get<ApiResponse<ProductImage>>(`${BASE_URL}/products/images/${id}`);
-    return res.data.data;
-  }
-
-  async createProductImage(data: Partial<ProductImage>): Promise<ProductImage> {
-    const res = await axiosClient.post<ApiResponse<ProductImage>>(`${BASE_URL}/products/images`, data);
-    return res.data.data;
-  }
-
-  async updateProductImage(id: string, data: Partial<ProductImage>): Promise<ProductImage> {
-    const res = await axiosClient.patch<ApiResponse<ProductImage>>(`${BASE_URL}/products/images/${id}`, data);
-    return res.data.data;
-  }
-
-  async deleteProductImage(id: string): Promise<void> {
-    await axiosClient.delete(`${BASE_URL}/products/images/${id}`);
-  }
-
-  // ==================== Brands ====================
+  // ==================== BRANDS ====================
   async getBrands(): Promise<Brand[]> {
     const res = await axiosClient.get<ApiResponse<Brand[]>>(`${BASE_URL}/brands`);
     return res.data.data;
@@ -202,59 +134,227 @@ class AdminService {
     return res.data.data;
   }
 
-  async updateBrandStatus(id: string, status: string): Promise<Brand> {
-    const res = await axiosClient.patch<ApiResponse<Brand>>(`${BASE_URL}/brands/${id}/status`, { status });
-    return res.data.data;
-  }
-
   async deleteBrand(id: string): Promise<void> {
     await axiosClient.delete(`${BASE_URL}/brands/${id}`);
   }
 
-  // ==================== Variants ====================
-  async getVariants(): Promise<ProductVariant[]> {
-    const res = await axiosClient.get<ApiResponse<ProductVariant[]>>(`${BASE_URL}/variants`);
+  // ==================== COLORS ====================
+  async getColors(page?: number, limit?: number): Promise<{ data: Color[]; total: number; page: number; totalPages: number }> {
+    const res = await axiosClient.get<ApiResponse<any>>(`${BASE_URL}/colors`, { params: { page, limit } });
     return res.data.data;
   }
 
-  async getVariantsByType(type: string): Promise<ProductVariant[]> {
-    const res = await axiosClient.get<ApiResponse<ProductVariant[]>>(`${BASE_URL}/variants`, { params: { type } });
+  async getColorById(id: number): Promise<Color> {
+  if (!id || isNaN(id) || id <= 0) {
+    console.warn('Invalid color ID:', id);
+    return null as any;
+  }
+  const res = await axiosClient.get<ApiResponse<Color>>(`${BASE_URL}/colors/${id}`);
+  return res.data.data;
+}
+
+  async createColor(data: { name: string; code: string }): Promise<Color> {
+    const res = await axiosClient.post<ApiResponse<Color>>(`${BASE_URL}/colors`, data);
     return res.data.data;
   }
 
-  async getVariantById(id: string): Promise<ProductVariant> {
-    const res = await axiosClient.get<ApiResponse<ProductVariant>>(`${BASE_URL}/variants/${id}`);
+  async updateColor(id: number, data: { name?: string; code?: string }): Promise<Color> {
+    const res = await axiosClient.patch<ApiResponse<Color>>(`${BASE_URL}/colors/${id}`, data);
     return res.data.data;
   }
 
-  async createVariant(data: Partial<ProductVariant>): Promise<ProductVariant> {
-    const res = await axiosClient.post<ApiResponse<ProductVariant>>(`${BASE_URL}/variants`, data);
+  async deleteColor(id: number): Promise<void> {
+    await axiosClient.delete(`${BASE_URL}/colors/${id}`);
+  }
+
+  async deleteMultipleColors(ids: number[]): Promise<{ success: number[]; failed: { id: number; reason: string }[] }> {
+    const res = await axiosClient.post<ApiResponse<any>>(`${BASE_URL}/colors/delete-multiple`, { ids });
     return res.data.data;
   }
 
-  async updateVariant(id: string, data: Partial<ProductVariant>): Promise<ProductVariant> {
-    const res = await axiosClient.patch<ApiResponse<ProductVariant>>(`${BASE_URL}/variants/${id}`, data);
+  // ==================== SIZES ====================
+  async getSizes(page?: number, limit?: number): Promise<{ data: Size[]; total: number; page: number; totalPages: number }> {
+    const res = await axiosClient.get<ApiResponse<any>>(`${BASE_URL}/sizes`, { params: { page, limit } });
     return res.data.data;
   }
 
-  async deleteVariant(id: string): Promise<void> {
-    await axiosClient.delete(`${BASE_URL}/variants/${id}`);
+  async getSizeById(id: number): Promise<Size> {
+    if (!id || isNaN(id) || id <= 0) {
+      console.warn('Invalid size ID:', id);
+      return null as any;
+    }
+    const res = await axiosClient.get<ApiResponse<Size>>(`${BASE_URL}/sizes/${id}`);
+    return res.data.data;
   }
 
-  // Helper methods for specific variant types
-  async getColors(): Promise<ProductVariant[]> {
-    return this.getVariantsByType('Màu sắc');
+  async createSize(data: { name: string; code?: string; sortOrder?: number }): Promise<Size> {
+    const res = await axiosClient.post<ApiResponse<Size>>(`${BASE_URL}/sizes`, data);
+    return res.data.data;
   }
 
-  async getSizes(): Promise<ProductVariant[]> {
-    return this.getVariantsByType('Kích thước');
+  async updateSize(id: number, data: { name?: string; code?: string; sortOrder?: number }): Promise<Size> {
+    const res = await axiosClient.patch<ApiResponse<Size>>(`${BASE_URL}/sizes/${id}`, data);
+    return res.data.data;
   }
 
-  async getSkinTypes(): Promise<ProductVariant[]> {
-    return this.getVariantsByType('Loại da');
+  async deleteSize(id: number): Promise<void> {
+    await axiosClient.delete(`${BASE_URL}/sizes/${id}`);
   }
 
-  // ==================== Orders ====================
+  async deleteMultipleSizes(ids: number[]): Promise<{ success: number[]; failed: { id: number; reason: string }[] }> {
+    const res = await axiosClient.post<ApiResponse<any>>(`${BASE_URL}/sizes/delete-multiple`, { ids });
+    return res.data.data;
+  }
+
+  async reorderSizes(orderIds: number[]): Promise<{ message: string; sizes: Size[] }> {
+    const res = await axiosClient.post<ApiResponse<any>>(`${BASE_URL}/sizes/reorder`, { orderIds });
+    return res.data.data;
+  }
+
+  // ==================== PRODUCTS ====================
+  async getProducts(): Promise<Product[]> {
+    const res = await axiosClient.get<ApiResponse<Product[]>>(`${BASE_URL}/products`);
+    return res.data.data;
+  }
+
+  async getProductById(id: string): Promise<Product> {
+    const res = await axiosClient.get<ApiResponse<Product>>(`${BASE_URL}/products/${id}`);
+    return res.data.data;
+  }
+
+  async getProductPrice(productId: string): Promise<{ price: number }> {
+    const res = await axiosClient.get(`${BASE_URL}/products/${productId}/price`);
+    return res.data;
+  }
+
+  async createProduct(data: Partial<Product>): Promise<Product> {
+    const res = await axiosClient.post<ApiResponse<Product>>(`${BASE_URL}/products`, data);
+    return res.data.data;
+  }
+
+  async updateProduct(id: string, data: Partial<Product>): Promise<Product> {
+    const res = await axiosClient.patch<ApiResponse<Product>>(`${BASE_URL}/products/${id}`, data);
+    return res.data.data;
+  }
+
+  async updateProductStatus(id: string, status: string): Promise<void> {
+    await axiosClient.patch(`${BASE_URL}/products/${id}/status`, { status });
+  }
+
+  async deleteProduct(id: string): Promise<void> {
+    await axiosClient.delete(`${BASE_URL}/products/${id}`);
+  }
+
+  // ==================== PRODUCT DETAILS ====================
+  async getProductDetails(): Promise<ProductDetail[]> {
+    const res = await axiosClient.get<ApiResponse<ProductDetail[]>>(`${BASE_URL}/product-details`);
+    return res.data.data;
+  }
+
+  async getProductDetailById(id: string): Promise<ProductDetail> {
+    const res = await axiosClient.get<ApiResponse<ProductDetail>>(`${BASE_URL}/product-details/${id}`);
+    return res.data.data;
+  }
+
+  async createProductDetail(data: Partial<ProductDetail>): Promise<ProductDetail> {
+    const res = await axiosClient.post<ApiResponse<ProductDetail>>(`${BASE_URL}/product-details`, data);
+    return res.data.data;
+  }
+
+  async updateProductDetail(id: string, data: Partial<ProductDetail>): Promise<ProductDetail> {
+    const res = await axiosClient.patch<ApiResponse<ProductDetail>>(`${BASE_URL}/product-details/${id}`, data);
+    return res.data.data;
+  }
+
+  async updateProductQuantity(id: string, quantity: number): Promise<void> {
+    await axiosClient.patch(`${BASE_URL}/product-details/${id}/quantity`, { quantity });
+  }
+
+  async deleteProductDetail(id: string): Promise<void> {
+    await axiosClient.delete(`${BASE_URL}/product-details/${id}`);
+  }
+
+  // ==================== PRODUCT IMAGES ====================
+  async getProductImages(): Promise<any[]> {
+    try {
+      console.log('📤 GET /admin/product-images');
+      const res = await axiosClient.get(`/admin/product-images`);  // ✅ Sửa
+      console.log('📦 Response:', res.data);
+      
+      const images = res.data?.data || res.data || [];
+      return Array.isArray(images) ? images : [];
+    } catch (error) {
+      console.error('❌ Failed to fetch product images:', error);
+      return [];
+    }
+  }
+
+  async createProductImage(data: any): Promise<any> {
+    console.log('📤 POST /admin/product-images', data);
+    const res = await axiosClient.post(`/admin/product-images`, data);  // ✅ Đúng
+    return res.data;
+  }
+
+  async updateProductImage(id: string, data: any): Promise<any> {
+    console.log(`📤 PATCH /admin/product-images/${id}`, data);
+    const res = await axiosClient.patch(`/admin/product-images/${id}`, data);  // ✅ Đúng
+    return res.data;
+  }
+
+  async deleteProductImage(id: string): Promise<any> {
+    console.log(`📤 DELETE /admin/product-images/${id}`);
+    const res = await axiosClient.delete(`/admin/product-images/${id}`);  // ✅ Thêm nếu chưa có
+    return res.data;
+  }
+
+  async uploadProductImage(file: File, productId?: string): Promise<any> {
+    console.log('📤 Uploading file:', file.name);
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    if (productId) {
+      formData.append('productId', productId);
+    }
+    
+    try {
+      // ✅ FIX: BỎ 's' - /upload/product (không có 's')
+      const res = await axiosClient.post(`/upload/product`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      
+      console.log('✅ Upload response:', res.data);
+      
+      // Xử lý response
+      if (res.data?.imageUrl) {
+        return res.data;
+      }
+      if (res.data?.data?.imageUrl) {
+        return res.data.data;
+      }
+      return res.data;
+    } catch (error) {
+      console.error('❌ Upload error:', error);
+      throw error;
+    }
+  }
+
+  async deleteFile(fileUrl: string): Promise<any> {
+  try {
+    console.log('🗑️ [FRONTEND] Delete file:', fileUrl);
+    
+    // Gọi API xóa file
+    const res = await axiosClient.delete(`/upload/file`, {
+      data: { fileUrl: fileUrl }
+    });
+    
+    console.log('✅ [FRONTEND] Delete file response:', res.data);
+    return res.data?.data || res.data;
+  } catch (error) {
+    console.error('❌ [FRONTEND] Delete file Error:', error);
+    throw error;
+  }
+}
+  // ==================== ORDERS ====================
   async getOrders(): Promise<Order[]> {
     const res = await axiosClient.get<ApiResponse<Order[]>>(`${BASE_URL}/orders`);
     return res.data.data;
@@ -262,16 +362,6 @@ class AdminService {
 
   async getOrderById(id: string): Promise<Order> {
     const res = await axiosClient.get<ApiResponse<Order>>(`${BASE_URL}/orders/${id}`);
-    return res.data.data;
-  }
-
-  async createOrder(data: Partial<Order>): Promise<Order> {
-    const res = await axiosClient.post<ApiResponse<Order>>(`${BASE_URL}/orders`, data);
-    return res.data.data;
-  }
-
-  async updateOrder(id: string, data: Partial<Order>): Promise<Order> {
-    const res = await axiosClient.patch<ApiResponse<Order>>(`${BASE_URL}/orders/${id}`, data);
     return res.data.data;
   }
 
@@ -284,7 +374,12 @@ class AdminService {
     await axiosClient.delete(`${BASE_URL}/orders/${id}`);
   }
 
-  // ==================== Reviews ====================
+  async deleteMultipleOrders(ids: number[]): Promise<{ success: number[]; failed: { id: number; reason: string }[] }> {
+    const res = await axiosClient.post<ApiResponse<any>>(`${BASE_URL}/orders/delete-multiple`, { ids });
+    return res.data.data;
+  }
+
+  // ==================== REVIEWS ====================
   async getReviews(): Promise<Review[]> {
     const res = await axiosClient.get<ApiResponse<Review[]>>(`${BASE_URL}/reviews`);
     return res.data.data;
@@ -304,7 +399,7 @@ class AdminService {
     await axiosClient.delete(`${BASE_URL}/reviews/${id}`);
   }
 
-  // ==================== Statistics ====================
+  // ==================== STATISTICS & REPORTS ====================
   async getBestSellers(limit: number = 10): Promise<BestSeller[]> {
     const res = await axiosClient.get<ApiResponse<BestSeller[]>>(`${BASE_URL}/statistics/best-sellers`, { params: { limit } });
     return res.data.data;
@@ -326,22 +421,39 @@ class AdminService {
   }
 
   async exportRevenueExcel(startDate: string, endDate: string): Promise<Blob> {
-    const res = await axiosClient.get(`${BASE_URL}/statistics/export/excel`, {
-      params: { startDate, endDate },
-      responseType: 'blob'
-    });
-    return res.data;
+    try {
+      const response = await axiosClient.get(`${BASE_URL}/statistics/export/excel`, {
+        params: { startDate, endDate },
+        responseType: 'blob',
+      });
+      
+      console.log('📦 Excel response:', response);
+      console.log('📦 Excel data type:', response.data instanceof Blob);
+      console.log('📦 Excel size:', response.data.size);
+      
+      return response.data;
+    } catch (error) {
+      console.error('❌ Export Excel error:', error);
+      throw error;
+    }
   }
 
   async exportRevenuePDF(startDate: string, endDate: string): Promise<Blob> {
-    const res = await axiosClient.get(`${BASE_URL}/statistics/export/pdf`, {
-      params: { startDate, endDate },
-      responseType: 'blob'
-    });
-    return res.data;
+    try {
+      const response = await axiosClient.get(`${BASE_URL}/statistics/export/pdf`, {
+        params: { startDate, endDate },
+        responseType: 'blob',
+      });
+      
+      console.log('📦 PDF response:', response);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Export PDF error:', error);
+      throw error;
+    }
   }
 
-  // ==================== Dashboard ====================
+  // ==================== DASHBOARD ====================
   async getDashboardStats(): Promise<{
     totalCustomers: number;
     totalOrders: number;
@@ -350,7 +462,7 @@ class AdminService {
     pendingReviews: number;
   }> {
     const [customers, orders, reviews] = await Promise.all([
-      this.getAccounts(),
+      this.getCustomers(),
       this.getOrders(),
       this.getReviews()
     ]);
@@ -358,10 +470,41 @@ class AdminService {
     return {
       totalCustomers: customers.length,
       totalOrders: orders.length,
-      deliveredOrders: orders.filter(o => o.status === 'Đã giao').length,
-      totalRevenue: orders.filter(o => o.status === 'Đã giao').reduce((sum, o) => sum + o.totalPrice, 0),
-      pendingReviews: reviews.filter(r => r.status === 'Chưa phản hồi').length
+      deliveredOrders: orders.filter(o => o.orderStatus === 'delivered').length,
+      totalRevenue: orders.filter(o => o.orderStatus === 'delivered').reduce((sum, o) => sum + (o.totalAmount || 0), 0),
+      pendingReviews: reviews.filter(r => !r.reply).length
     };
+  }
+
+  async findAccountByUsername(username: string): Promise<Account> {
+    const res = await axiosClient.get<ApiResponse<Account>>(`${BASE_URL}/accounts/search`, { params: { username } });
+    return res.data.data;
+  }
+
+  async updateAccountRole(id: string, role: string): Promise<Account> {
+    const res = await axiosClient.patch<ApiResponse<Account>>(`${BASE_URL}/accounts/${id}/role`, { role });
+    return res.data.data;
+  }
+
+  async toggleAccountLock(id: string): Promise<{ message: string; status: string }> {
+    const res = await axiosClient.patch<ApiResponse<any>>(`${BASE_URL}/accounts/${id}/toggle-lock`);
+    return res.data.data;
+  }
+
+  async getAllColors(): Promise<Color[]> {
+    const res = await axiosClient.get<ApiResponse<Color[]>>(`${BASE_URL}/colors/all`);
+    return res.data.data;
+  }
+
+  
+  async getAllSizes(): Promise<Size[]> {
+    const res = await axiosClient.get<ApiResponse<Size[]>>(`${BASE_URL}/sizes/all`);
+    return res.data.data;
+  }
+
+  async forceDeleteOrder(id: string): Promise<{ message: string; deletedOrderId: number }> {
+    const res = await axiosClient.delete<ApiResponse<any>>(`${BASE_URL}/orders/${id}/force`);
+    return res.data.data;
   }
 }
 

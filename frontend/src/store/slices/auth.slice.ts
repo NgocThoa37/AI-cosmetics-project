@@ -1,97 +1,95 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+// frontend/src/store/slices/auth.slice.ts
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { authService } from '@/services/api/auth.service';
-import { userService } from '@/services/api/user.service';
-import { LoginRequest, RegisterRequest, User, Customer } from '@/types';
-import {
-  setAccessToken,
-  setRefreshToken,
-  removeAccessToken,
-  removeRefreshToken,
-  setUser,
-  removeUser,
-  getAccessToken,
-  getUser,
-} from '@/helpers/storage.helper';
+import toast from 'react-hot-toast';
 
 interface AuthState {
   isAuthenticated: boolean;
-  user: Customer | null;
+  user: any;
   loading: boolean;
   error: string | null;
 }
 
 const initialState: AuthState = {
-  isAuthenticated: !!getAccessToken(),
-  user: getUser(),
+  isAuthenticated: false,
+  user: null,
   loading: false,
   error: null,
 };
 
+// Login
 export const login = createAsyncThunk(
   'auth/login',
-  async (data: LoginRequest, { rejectWithValue }) => {
+  async ({ username, password }: { username: string; password: string }, { rejectWithValue }) => {
     try {
-      const response = await authService.login(data);
-      setAccessToken(response.accessToken);
-      setRefreshToken(response.refreshToken);
-      const userProfile = await userService.getMyProfile();
-      setUser(userProfile);
-      return { ...response, userProfile };
+      console.log('📤 [AUTH SLICE] Login attempt:', { username, password });
+      
+      // ✅ FIX: Truyền object { username, password }
+      const res = await authService.login({ username, password });
+      console.log('✅ [AUTH SLICE] Login response:', res);
+      
+      const { accessToken, refreshToken, user } = res;
+      console.log('👤 [AUTH SLICE] User:', user);
+      console.log('📊 [AUTH SLICE] Role:', user?.role);
+      
+      // ✅ FIX: Cho phép cả admin và employee
+      if (user?.role === 'admin' || user?.role === 'employee') {
+        // Lưu token vào localStorage
+        localStorage.setItem('admin_token', accessToken);
+        localStorage.setItem('refresh_token', refreshToken);
+        localStorage.setItem('user_role', user.role);
+        localStorage.setItem('user_info', JSON.stringify(user));
+        
+        return { accessToken, refreshToken, user };
+      } else {
+        console.log('❌ [AUTH SLICE] Not admin/employee role:', user?.role);
+        return rejectWithValue('Tài khoản không có quyền truy cập trang admin');
+      }
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Đăng nhập thất bại');
+      console.error('❌ [AUTH SLICE] Login error:', error);
+      return rejectWithValue(
+        error.response?.data?.message || 
+        error.message || 
+        'Đăng nhập thất bại'
+      );
     }
   }
 );
 
+// Register
 export const register = createAsyncThunk(
   'auth/register',
-  async (data: RegisterRequest, { rejectWithValue }) => {
+  async (data: any, { rejectWithValue }) => {
     try {
-      const response = await authService.register(data);
-      return response;
+      console.log('📤 [AUTH SLICE] Register:', data);
+      
+      // ✅ FIX: Truyền object
+      const res = await authService.register(data);
+      return res;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Đăng ký thất bại');
+      return rejectWithValue(
+        error.response?.data?.message || 
+        error.message || 
+        'Đăng ký thất bại'
+      );
     }
   }
 );
 
+// Logout
 export const logout = createAsyncThunk(
   'auth/logout',
   async (_, { rejectWithValue }) => {
     try {
-      await authService.logout();
-      removeAccessToken();
-      removeRefreshToken();
-      removeUser();
-      return {};
+      // Xóa token
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user_role');
+      localStorage.removeItem('user_info');
+      
+      return true;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Đăng xuất thất bại');
-    }
-  }
-);
-
-export const fetchMyProfile = createAsyncThunk(
-  'auth/fetchProfile',
-  async (_, { rejectWithValue }) => {
-    try {
-      const userProfile = await userService.getMyProfile();
-      setUser(userProfile);
-      return userProfile;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Lấy thông tin thất bại');
-    }
-  }
-);
-
-export const updateMyProfile = createAsyncThunk(
-  'auth/updateProfile',
-  async (data: { fullName?: string; phone?: string; dob?: string; gender?: string; avatar?: string | null }, { rejectWithValue }) => {
-    try {
-      const userProfile = await userService.updateMyProfile(data);
-      setUser(userProfile);
-      return userProfile;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Cập nhật thông tin thất bại');
+      return rejectWithValue('Logout failed');
     }
   }
 );
@@ -103,23 +101,10 @@ const authSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
-    setUserFromStorage: (state) => {
-      const user = getUser();
-      if (user) {
-        state.user = user;
-        state.isAuthenticated = true;
-      }
-    },
-    updateUser: (state, action: PayloadAction<Partial<Customer>>) => {
-      if (state.user) {
-        state.user = { ...state.user, ...action.payload };
-        setUser(state.user);
-      }
-    },
   },
   extraReducers: (builder) => {
+    // Login
     builder
-      // Login
       .addCase(login.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -127,13 +112,15 @@ const authSlice = createSlice({
       .addCase(login.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
-        state.user = action.payload.userProfile;
+        state.user = action.payload.user;
         state.error = null;
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload as string;
+        state.isAuthenticated = false;
+        state.error = action.payload as string || 'Đăng nhập thất bại';
       })
+      
       // Register
       .addCase(register.pending, (state) => {
         state.loading = true;
@@ -141,49 +128,21 @@ const authSlice = createSlice({
       })
       .addCase(register.fulfilled, (state) => {
         state.loading = false;
+        state.error = null;
       })
       .addCase(register.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload as string;
+        state.error = action.payload as string || 'Đăng ký thất bại';
       })
+      
       // Logout
       .addCase(logout.fulfilled, (state) => {
         state.isAuthenticated = false;
         state.user = null;
-      })
-      // Fetch My Profile
-      .addCase(fetchMyProfile.pending, (state) => {
-        state.loading = true;
         state.error = null;
-      })
-      .addCase(fetchMyProfile.fulfilled, (state, action) => {
-        state.loading = false;
-        state.isAuthenticated = true;
-        state.user = action.payload;
-        state.error = null;
-      })
-      .addCase(fetchMyProfile.rejected, (state, action) => {
-        state.loading = false;
-        state.isAuthenticated = false;
-        state.user = null;
-        state.error = action.payload as string;
-      })
-      // Update My Profile
-      .addCase(updateMyProfile.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(updateMyProfile.fulfilled, (state, action) => {
-        state.loading = false;
-        state.user = action.payload;
-        state.error = null;
-      })
-      .addCase(updateMyProfile.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
       });
   },
 });
 
-export const { clearError, setUserFromStorage, updateUser } = authSlice.actions;
+export const { clearError } = authSlice.actions;
 export default authSlice.reducer;

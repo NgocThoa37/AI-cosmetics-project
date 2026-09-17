@@ -183,13 +183,16 @@ export const ReviewList: React.FC<ReviewListProps> = ({ productId }) => {
             {/* Customer Info */}
             <div className="flex items-start gap-3 mb-3">
               <div className="w-10 h-10 rounded-full overflow-hidden bg-brand-sand flex-shrink-0">
-                <Image
-                  src={review.customer?.user?.avatar || '/avatar-placeholder.jpg'}
-                  alt={review.customer?.user?.fullName || 'Khách hàng'}
-                  width={40}
-                  height={40}
-                  className="object-cover"
-                />
+                <div className="w-10 h-10 rounded-full overflow-hidden bg-brand-sand flex-shrink-0">
+                  <Image
+                    src={review.customer?.user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(review.customer?.user?.fullName || 'Khách hàng')}&background=8B5CF6&color=fff&size=40&bold=true`}
+                    alt={review.customer?.user?.fullName || 'Khách hàng'}
+                    width={40}
+                    height={40}
+                    className="object-cover rounded-full"
+                    unoptimized
+                  />
+                </div>
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between flex-wrap gap-2">

@@ -4,13 +4,13 @@ import { Order } from '@/types';
 
 interface OrderState {
   orders: Order[];
-  currentOrder: Order | null;
+  selectedOrder: Order | null;
   loading: boolean;
 }
 
 const initialState: OrderState = {
   orders: [],
-  currentOrder: null,
+  selectedOrder: null,
   loading: false,
 };
 
@@ -45,19 +45,61 @@ export const cancelOrder = createAsyncThunk(
 const orderSlice = createSlice({
   name: 'order',
   initialState,
-  reducers: {},
+  reducers: {
+    clearSelectedOrder: (state) => {
+      state.selectedOrder = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
+      .addCase(fetchMyOrders.pending, (state) => {
+        state.loading = true;
+      })
       .addCase(fetchMyOrders.fulfilled, (state, action) => {
+        state.loading = false;
         state.orders = action.payload;
       })
+      .addCase(fetchMyOrders.rejected, (state) => {
+        state.loading = false;
+      })
+      .addCase(fetchOrderById.pending, (state) => {
+        state.loading = true;
+      })
       .addCase(fetchOrderById.fulfilled, (state, action) => {
-        state.currentOrder = action.payload;
+        state.loading = false;
+        state.selectedOrder = action.payload;
+      })
+      .addCase(fetchOrderById.rejected, (state) => {
+        state.loading = false;
+      })
+      .addCase(createOrder.pending, (state) => {
+        state.loading = true;
       })
       .addCase(createOrder.fulfilled, (state, action) => {
-        state.currentOrder = action.payload;
+        state.loading = false;
+        state.selectedOrder = action.payload;
+      })
+      .addCase(createOrder.rejected, (state) => {
+        state.loading = false;
+      })
+      // ✅ THÊM 3 CASE CHO cancelOrder
+      .addCase(cancelOrder.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(cancelOrder.fulfilled, (state, action) => {
+        state.loading = false;
+        state.selectedOrder = action.payload;
+        // Cập nhật lại danh sách orders
+        const index = state.orders.findIndex(o => o.id === action.payload.id);
+        if (index !== -1) {
+          state.orders[index] = action.payload;
+        }
+      })
+      .addCase(cancelOrder.rejected, (state) => {
+        state.loading = false;
       });
   },
 });
 
+export const { clearSelectedOrder } = orderSlice.actions;
 export default orderSlice.reducer;

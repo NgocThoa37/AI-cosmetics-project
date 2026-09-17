@@ -28,39 +28,64 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
   parentCategories = [],
 }) => {
   const [formData, setFormData] = useState({
-    catCode: '',
     name: '',
+    slug: '',
     description: '',
     parentId: '',
     status: CategoryStatus.VISIBLE,
   });
   const [loading, setLoading] = useState(false);
 
+  const generateSlug = (text: string) => {
+    return text
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  };
+
   useEffect(() => {
     if (initialData) {
       setFormData({
-        catCode: initialData.catCode || '',
         name: initialData.name || '',
+        slug: initialData.slug || generateSlug(initialData.name || ''),
         description: initialData.description || '',
         parentId: initialData.parentId || '',
         status: initialData.status || CategoryStatus.VISIBLE,
       });
     } else {
       setFormData({
-        catCode: '',
         name: '',
+        slug: '',
         description: '',
         parentId: '',
         status: CategoryStatus.VISIBLE,
       });
     }
-  }, [initialData]);
+  }, [initialData, isOpen]);
+
+  const handleNameChange = (value: string) => {
+    setFormData({
+      ...formData,
+      name: value,
+      slug: generateSlug(value),
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await onSave(formData);
+      const submitData = {
+        name: formData.name,
+        slug: formData.slug || generateSlug(formData.name),
+        description: formData.description,
+        parentId: formData.parentId || null,
+        displayOrder: 0,
+        status: formData.status,
+      };
+      await onSave(submitData);
       onClose();
     } catch (error) {
       console.error('Failed to save category:', error);
@@ -84,17 +109,25 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          {/* 🔥 THAY BẰNG ID */}
           <Input
-            label="Mã danh mục"
-            value={formData.catCode}
-            onChange={(e) => setFormData({ ...formData, catCode: e.target.value })}
-            required
+            label="ID"
+            value={initialData?.id || 'Tự động tạo'}
+            disabled
           />
 
           <Input
             label="Tên danh mục"
             value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            onChange={(e) => handleNameChange(e.target.value)}
+            required
+          />
+
+          <Input
+            label="Slug (URL)"
+            value={formData.slug}
+            onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+            placeholder="ví-dụ: kem-chong-nang"
             required
           />
 
@@ -104,7 +137,9 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
             onChange={(e) => setFormData({ ...formData, parentId: e.target.value })}
             options={[
               { value: '', label: 'Không có (Danh mục gốc)' },
-              ...parentCategories.filter(c => c.id !== initialData?.id).map(cat => ({ value: cat.id, label: cat.name }))
+              ...parentCategories
+                .filter(c => c.id !== initialData?.id)
+                .map(cat => ({ value: String(cat.id), label: cat.name }))
             ]}
           />
 
@@ -126,8 +161,12 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
           />
 
           <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>Hủy</Button>
-            <Button type="submit" loading={loading}>{initialData ? 'Cập nhật' : 'Thêm mới'}</Button>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Hủy
+            </Button>
+            <Button type="submit" loading={loading}>
+              {initialData ? 'Cập nhật' : 'Thêm mới'}
+            </Button>
           </div>
         </form>
       </div>

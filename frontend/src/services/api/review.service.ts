@@ -9,6 +9,7 @@ class ReviewService extends BaseService {
 
   async createReview(data: {
     orderItemId: number;
+    productId?: string; 
     rating: number;
     title?: string;
     comment?: string;

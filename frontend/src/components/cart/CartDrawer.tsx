@@ -14,13 +14,20 @@ interface CartDrawerProps {
   onClose: () => void;
 }
 
+// ✅ Định nghĩa placeholder image
+const PLACEHOLDER_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"%3E%3Crect width="200" height="200" fill="%23f5f0eb"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999" font-size="14"%3ENo Image%3C/text%3E%3C/svg%3E';
+
 export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
   const router = useRouter();
   const { cart, updateQuantity, removeItem } = useCart();
   const details = cart?.details || [];
 
   const subtotal = details.reduce((sum, item) => {
-    const price = item.product?.price || 0;
+    const product = (item as any).product;
+    const productDetail = item.productDetail;
+    const productFromDetail = (productDetail as any)?.product;
+    const finalProduct = product || productFromDetail;
+    const price = finalProduct?.price || 0;
     return sum + price * item.quantity;
   }, 0);
 
@@ -28,9 +35,50 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
   const isFreeShipping = subtotal >= freeShippingThreshold;
   const missingForFreeShipping = freeShippingThreshold - subtotal;
 
+  // ✅ Xử lý thanh toán - Lấy tất cả ID sản phẩm
   const handleCheckout = () => {
+    console.log('🛒 [CartDrawer] handleCheckout called');
+    console.log('📦 details:', details);
+    
+    if (details.length === 0) {
+      alert('Giỏ hàng trống!');
+      return;
+    }
+    
+    // ✅ Lấy tất cả ID sản phẩm trong giỏ
+    const ids = details.map((item) => item.id);
+    console.log('🛒 [CartDrawer] Checkout with ids:', ids);
+    
     onClose();
-    router.push('/checkout');
+    router.push(`/checkout?ids=${ids.join(',')}`);
+  };
+
+  // ✅ Xử lý xem giỏ hàng chi tiết
+  const handleViewCart = () => {
+    onClose();
+    router.push('/cart');
+  };
+
+  // ✅ Hàm lấy ảnh an toàn
+  const getImageUrl = (item: any): string => {
+    const product = item.product;
+    const productDetail = item.productDetail;
+    const productFromDetail = (productDetail as any)?.product;
+    const finalProduct = product || productFromDetail;
+    
+    if (finalProduct?.images && finalProduct.images.length > 0) {
+      const mainImage = finalProduct.images.find((img: any) => img.isMain);
+      if (mainImage?.imageUrl) return mainImage.imageUrl;
+      if (finalProduct.images[0]?.imageUrl) return finalProduct.images[0].imageUrl;
+    }
+    
+    if (productDetail?.images && productDetail.images.length > 0) {
+      const mainImage = productDetail.images.find((img: any) => img.isMain);
+      if (mainImage?.imageUrl) return mainImage.imageUrl;
+      if (productDetail.images[0]?.imageUrl) return productDetail.images[0].imageUrl;
+    }
+    
+    return PLACEHOLDER_IMAGE;
   };
 
   return (
@@ -98,18 +146,32 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                   {/* Items */}
                   <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
                     {details.map((item) => {
-                      const product = item.product;
-                      const variant = item.productDetail;
-                      const price = product?.price || 0;
-                      const imageUrl = product?.images?.find(img => img.isMain)?.imageUrl || '/placeholder.jpg';
+                      const product = (item as any).product;
+                      const productDetail = item.productDetail;
+                      const productFromDetail = (productDetail as any)?.product;
+                      const finalProduct = product || productFromDetail;
+                      
+                      const price = finalProduct?.price || 0;
+                      const productName = finalProduct?.name || 'Sản phẩm';
+                      const imageUrl = getImageUrl(item);
+                      const variant = productDetail;
 
                       return (
                         <div key={item.id} className="flex gap-3 p-3 border border-brand-warm rounded-xl">
                           <div className="w-16 h-16 rounded-lg overflow-hidden bg-brand-sand flex-shrink-0">
-                            <Image src={imageUrl} alt={product?.name || ''} width={64} height={64} className="object-cover" />
+                            <Image 
+                              src={imageUrl} 
+                              alt={productName} 
+                              width={64} 
+                              height={64} 
+                              className="object-cover"
+                              onError={(e) => {
+                                e.currentTarget.src = PLACEHOLDER_IMAGE;
+                              }}
+                            />
                           </div>
                           <div className="flex-1">
-                            <h4 className="font-semibold text-sm line-clamp-1">{product?.name}</h4>
+                            <h4 className="font-semibold text-sm line-clamp-1">{productName}</h4>
                             <p className="text-xs text-brand-dark/50">
                               {variant?.color?.name && `${variant.color.name}`}
                               {variant?.size?.name && ` / ${variant.size.name}`}
@@ -119,6 +181,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                                 <button
                                   onClick={() => updateQuantity(item.productDetailId, item.quantity - 1)}
                                   className="px-2 py-1 hover:text-brand-accent"
+                                  disabled={item.quantity <= 1}
                                 >
                                   <Minus size={10} />
                                 </button>
@@ -141,12 +204,30 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                     })}
                   </div>
 
-                  {/* Footer */}
+                  {/* Footer - CÓ NÚT XEM GIỎ HÀNG */}
                   <div className="p-6 border-t border-brand-warm bg-brand-beige/20">
-                    <div className="flex justify-between mb-4">
-                      <span className="text-sm">Tổng cộng</span>
+                    <div className="flex justify-between mb-2">
+                      <span className="text-sm text-brand-dark/60">Tạm tính</span>
+                      <span className="text-sm">{formatCurrency(subtotal)}</span>
+                    </div>
+                    <div className="flex justify-between mb-2">
+                      <span className="text-sm text-brand-dark/60">Phí vận chuyển</span>
+                      <span className="text-sm">{isFreeShipping ? 'Miễn phí' : formatCurrency(30000)}</span>
+                    </div>
+                    <div className="flex justify-between mb-4 pt-2 border-t border-brand-warm">
+                      <span className="text-sm font-bold">Tổng cộng</span>
                       <span className="text-xl font-bold text-brand-accent">{formatCurrency(subtotal + (isFreeShipping ? 0 : 30000))}</span>
                     </div>
+
+                    {/* ✅ Nút XEM GIỎ HÀNG */}
+                    <button
+                      onClick={handleViewCart}
+                      className="w-full border border-brand-dark text-brand-dark hover:bg-brand-dark hover:text-white py-3 rounded-full text-xs font-bold tracking-wider transition-colors mb-2"
+                    >
+                      XEM GIỎ HÀNG
+                    </button>
+
+                    {/* ✅ Nút THANH TOÁN */}
                     <button
                       onClick={handleCheckout}
                       className="w-full bg-brand-dark hover:bg-brand-accent text-white py-3 rounded-full text-xs font-bold tracking-wider transition-colors"

@@ -41,17 +41,22 @@ export const getSkinTypeLabel = (skinType: string): string => {
   return labels[skinType] || skinType;
 };
 
+// ✅ ĐÃ SỬA
 export const getOrderStatusLabel = (status: string): string => {
   const labels: Record<string, string> = {
-    pending: 'Chờ xác nhận',
+    pending: 'Chờ thanh toán',        // ✅ ĐỔI TỪ "Chờ xác nhận" THÀNH "Chờ thanh toán"
     confirmed: 'Đã xác nhận',
     shipping: 'Đang giao hàng',
     delivered: 'Đã hoàn thành',
     cancelled: 'Đã hủy',
+    // 🔥 THÊM TRẠNG THÁI MỚI NẾU CẦN
+    processing: 'Đang xử lý',
+    waiting_payment: 'Chờ thanh toán',
   };
   return labels[status] || status;
 };
 
+// ✅ THÊM MÀU CHO TRẠNG THÁI MỚI
 export const getOrderStatusColor = (status: string): string => {
   const colors: Record<string, string> = {
     pending: 'text-amber-600 bg-amber-50',
@@ -59,6 +64,8 @@ export const getOrderStatusColor = (status: string): string => {
     shipping: 'text-indigo-600 bg-indigo-50',
     delivered: 'text-emerald-600 bg-emerald-50',
     cancelled: 'text-red-600 bg-red-50',
+    processing: 'text-purple-600 bg-purple-50',     // ✅ THÊM
+    waiting_payment: 'text-amber-600 bg-amber-50',  // ✅ THÊM
   };
   return colors[status] || 'text-gray-600 bg-gray-50';
 };

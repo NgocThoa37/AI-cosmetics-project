@@ -5,7 +5,7 @@ import { X } from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
 import { Select } from '@/components/common/Select';
-import { EmployeeRole, EmployeeStatus } from '@/types/admin.types';
+import { EmployeeStatus } from '@/types/admin.types';
 
 interface EmployeeFormProps {
   isOpen: boolean;
@@ -14,56 +14,70 @@ interface EmployeeFormProps {
   initialData?: any;
 }
 
-const roleOptions = [
-  { value: EmployeeRole.MANAGER, label: 'Quản lý' },
-  { value: EmployeeRole.SALES, label: 'Nhân viên bán hàng' },
-  { value: EmployeeRole.SUPPORT, label: 'Chăm sóc khách hàng' },
+// 🔥 ĐỔI TÊN: roleOptions → positionOptions
+const positionOptions = [
+  { value: 'Quản lý', label: 'Quản lý' },
+  { value: 'Nhân viên bán hàng', label: 'Nhân viên bán hàng' },
+  { value: 'Chăm sóc khách hàng', label: 'Chăm sóc khách hàng' },
 ];
 
 const statusOptions = [
-  { value: EmployeeStatus.WORKING, label: 'Đang làm việc' },
-  { value: EmployeeStatus.ON_LEAVE, label: 'Nghỉ phép' },
-  { value: EmployeeStatus.RESIGNED, label: 'Đã nghỉ việc' },
+  { value: 'active', label: 'Đang làm việc' },
+  { value: 'inactive', label: 'Không hoạt động' },
 ];
 
-export const EmployeeForm: React.FC<EmployeeFormProps> = ({ isOpen, onClose, onSave, initialData }) => {
+export const EmployeeForm: React.FC<EmployeeFormProps> = ({ 
+  isOpen, 
+  onClose, 
+  onSave, 
+  initialData 
+}) => {
+  // 🔥 ĐỔI: role → position
   const [formData, setFormData] = useState({
-    empCode: '',
+    employeeCode: '',
     fullName: '',
-    role: EmployeeRole.SALES,
+    position: '',  // 🔥 Đổi từ role
     phone: '',
     email: '',
-    status: EmployeeStatus.WORKING,
+    status: 'active',
   });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (initialData) {
       setFormData({
-        empCode: initialData.empCode || '',
-        fullName: initialData.fullName || '',
-        role: initialData.role || EmployeeRole.SALES,
-        phone: initialData.phone || '',
-        email: initialData.email || '',
-        status: initialData.status || EmployeeStatus.WORKING,
+        employeeCode: initialData.employeeCode || '',
+        fullName: initialData.user?.fullName || '',
+        position: initialData.position || '',  // 🔥 Đổi từ role
+        phone: initialData.user?.phone || '',
+        email: initialData.user?.email || '',
+        status: initialData.status || 'active',
       });
     } else {
       setFormData({
-        empCode: '',
+        employeeCode: '',
         fullName: '',
-        role: EmployeeRole.SALES,
+        position: '',
         phone: '',
         email: '',
-        status: EmployeeStatus.WORKING,
+        status: 'active',
       });
     }
-  }, [initialData]);
+  }, [initialData, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await onSave(formData);
+      // 🔥 GỬI position thay vì role
+      await onSave({
+        employeeCode: formData.employeeCode,
+        fullName: formData.fullName,
+        position: formData.position,  // 🔥 Đổi từ role
+        phone: formData.phone,
+        email: formData.email,
+        status: formData.status,
+      });
       onClose();
     } catch (error) {
       console.error('Failed to save employee:', error);
@@ -89,9 +103,10 @@ export const EmployeeForm: React.FC<EmployeeFormProps> = ({ isOpen, onClose, onS
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           <Input
             label="Mã nhân viên"
-            value={formData.empCode}
-            onChange={(e) => setFormData({ ...formData, empCode: e.target.value })}
+            value={formData.employeeCode}
+            onChange={(e) => setFormData({ ...formData, employeeCode: e.target.value })}
             required
+            disabled={!!initialData}
           />
 
           <Input
@@ -101,11 +116,12 @@ export const EmployeeForm: React.FC<EmployeeFormProps> = ({ isOpen, onClose, onS
             required
           />
 
+          {/* 🔥 ĐỔI: Select chức vụ dùng positionOptions */}
           <Select
             label="Chức vụ"
-            value={formData.role}
-            onChange={(e) => setFormData({ ...formData, role: e.target.value as EmployeeRole })}
-            options={roleOptions}
+            value={formData.position}  // 🔥 Đổi từ role
+            onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+            options={positionOptions}  // 🔥 Đổi từ roleOptions
           />
 
           <Input
@@ -126,13 +142,17 @@ export const EmployeeForm: React.FC<EmployeeFormProps> = ({ isOpen, onClose, onS
           <Select
             label="Trạng thái"
             value={formData.status}
-            onChange={(e) => setFormData({ ...formData, status: e.target.value as EmployeeStatus })}
+            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
             options={statusOptions}
           />
 
           <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>Hủy</Button>
-            <Button type="submit" loading={loading}>{initialData ? 'Cập nhật' : 'Thêm mới'}</Button>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Hủy
+            </Button>
+            <Button type="submit" loading={loading}>
+              {initialData ? 'Cập nhật' : 'Thêm mới'}
+            </Button>
           </div>
         </form>
       </div>

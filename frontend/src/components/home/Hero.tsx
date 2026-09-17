@@ -89,6 +89,7 @@ export const Hero: React.FC<HeroProps> = ({ onScrollToProducts }) => {
                 height={420}
                 className="object-cover w-full h-full"
                 priority
+                sizes="(max-width: 768px) 100vw, 50vw" // ✅ THÊM DÒNG NÀY
               />
               <div className="absolute inset-0 bg-gradient-to-t from-brand-dark/10 to-transparent" />
             </div>

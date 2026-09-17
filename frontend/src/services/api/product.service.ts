@@ -1,6 +1,14 @@
 import { BaseService } from './base.service';
 import { API_ENDPOINTS } from '@/common/constants/api.constants';
-import { Product, ProductDetail, Category, Color, Size } from '@/types';
+import { Product, ProductDetail, Category, Color, Size, Brand } from '@/types'; // ✅ Thêm Brand
+
+interface PaginatedResponse<T> {
+  data: T[];
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  itemsPerPage: number;
+}
 
 class ProductService extends BaseService {
   // Products
@@ -9,8 +17,15 @@ class ProductService extends BaseService {
     brand?: string;
     search?: string;
     skinType?: string;
-  }): Promise<Product[]> {
-    return this.get<Product[]>(API_ENDPOINTS.PRODUCTS, params);
+    page?: number;
+    limit?: number;
+    sort?: string;
+  }): Promise<PaginatedResponse<Product> | Product[]> {
+    return this.get<PaginatedResponse<Product> | Product[]>(API_ENDPOINTS.PRODUCTS, params);
+  }
+
+  async getBestSellers(limit: number = 8): Promise<Product[]> {
+    return this.get<Product[]>(`${API_ENDPOINTS.PRODUCTS}/best-sellers`, { limit });
   }
 
   async getProductById(id: string): Promise<Product> {
@@ -36,6 +51,15 @@ class ProductService extends BaseService {
 
   async searchCategories(keyword: string): Promise<Category[]> {
     return this.get<Category[]>(`${API_ENDPOINTS.CATEGORIES}/search`, { keyword });
+  }
+
+  // ✅ THÊM: Brands
+  async getBrands(): Promise<Brand[]> {
+    return this.get<Brand[]>(API_ENDPOINTS.BRANDS);
+  }
+
+  async getBrandById(id: number): Promise<Brand> {
+    return this.get<Brand>(`${API_ENDPOINTS.BRANDS}/${id}`);
   }
 
   // Sizes

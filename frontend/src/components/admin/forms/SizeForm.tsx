@@ -4,40 +4,34 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
+import { Size } from '@/types/admin.types';
 
-interface VariantFormProps {
+interface SizeFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (data: any) => void;
-  initialData?: any;
-  variantType: string;
-  placeholder: string;
+  initialData?: Size | null;
 }
 
-export const VariantForm: React.FC<VariantFormProps> = ({
+export const SizeForm: React.FC<SizeFormProps> = ({
   isOpen,
   onClose,
   onSave,
   initialData,
-  variantType,
-  placeholder,
 }) => {
   const [formData, setFormData] = useState({
-    variantCode: '',
-    value: '',
+    name: '',
   });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (initialData) {
       setFormData({
-        variantCode: initialData.variantCode || '',
-        value: initialData.value || '',
+        name: initialData.name || '',
       });
     } else {
       setFormData({
-        variantCode: '',
-        value: '',
+        name: '',
       });
     }
   }, [initialData]);
@@ -46,10 +40,10 @@ export const VariantForm: React.FC<VariantFormProps> = ({
     e.preventDefault();
     setLoading(true);
     try {
-      await onSave({ ...formData, name: variantType });
+      await onSave(formData);
       onClose();
     } catch (error) {
-      console.error('Failed to save variant:', error);
+      console.error('Failed to save size:', error);
     } finally {
       setLoading(false);
     }
@@ -62,7 +56,7 @@ export const VariantForm: React.FC<VariantFormProps> = ({
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden">
         <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
           <h3 className="text-lg font-bold text-slate-800">
-            {initialData ? `Sửa ${variantType}` : `Thêm ${variantType} mới`}
+            {initialData ? 'Sửa kích thước' : 'Thêm kích thước mới'}
           </h3>
           <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600">
             <X size={20} />
@@ -71,23 +65,18 @@ export const VariantForm: React.FC<VariantFormProps> = ({
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           <Input
-            label="Mã biến thể"
-            value={formData.variantCode}
-            onChange={(e) => setFormData({ ...formData, variantCode: e.target.value })}
-            required
-          />
-
-          <Input
-            label="Giá trị"
-            value={formData.value}
-            onChange={(e) => setFormData({ ...formData, value: e.target.value })}
-            placeholder={placeholder}
+            label="Tên kích thước *"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            placeholder="VD: 30ml, 50ml, 100ml..."
             required
           />
 
           <div className="flex justify-end gap-3 pt-4">
             <Button type="button" variant="outline" onClick={onClose}>Hủy</Button>
-            <Button type="submit" loading={loading}>{initialData ? 'Cập nhật' : 'Thêm mới'}</Button>
+            <Button type="submit" loading={loading}>
+              {initialData ? 'Cập nhật' : 'Thêm mới'}
+            </Button>
           </div>
         </form>
       </div>

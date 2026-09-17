@@ -3,37 +3,38 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
-import { useAuth } from '@/hooks/useAuth';
+import { useCustomerAuth } from '@/hooks/useCustomerAuth';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchMyOrders } from '@/store/slices/order.slice';
-import { fetchMyProfile } from '@/store/slices/auth.slice';
+import { fetchMyProfile } from '@/store/slices/customerAuth.slice';
 import { formatCurrency, formatDate, getOrderStatusLabel, getOrderStatusColor } from '@/helpers/format.helper';
-import { User, MapPin, KeyRound, ShoppingBag, Bell, Star } from 'lucide-react';
+import AccountSidebar from '@/components/customer/AccountSidebar';
 
 export default function AccountPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { isAuthenticated, user, loading: authLoading } = useAuth();
+  const { isAuthenticated, user, loading: authLoading } = useCustomerAuth();
   const { orders, loading: ordersLoading } = useAppSelector((state) => state.order);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login');
-      return;
+    // ✅ CHỈ LOG, KHÔNG REDIRECT
+    const token = localStorage.getItem('customer_token');
+    console.log('🔍 [AccountPage] Token:', token ? 'CÓ' : 'KHÔNG');
+    console.log('🔍 [AccountPage] isAuthenticated:', isAuthenticated);
+    
+    // ❌ KHÔNG REDIRECT
+    // if (!isAuthenticated) {
+    //   router.push('/login');
+    //   return;
+    // }
+    
+    // ✅ Nếu có token và authenticated, fetch data
+    if (token && isAuthenticated) {
+      dispatch(fetchMyProfile());
+      dispatch(fetchMyOrders());
     }
-    dispatch(fetchMyProfile());
-    dispatch(fetchMyOrders());
   }, [isAuthenticated, router, dispatch]);
-
-  const menuItems = [
-    { href: '/account/profile', icon: User, label: 'Hồ sơ cá nhân' },
-    { href: '/account/addresses', icon: MapPin, label: 'Địa chỉ giao hàng' },
-    { href: '/account/change-password', icon: KeyRound, label: 'Đổi mật khẩu' },
-    { href: '/account/orders', icon: ShoppingBag, label: 'Đơn hàng của tôi' },
-    { href: '/account/reviews', icon: Star, label: 'Đánh giá của tôi' },
-  ];
 
   const recentOrders = orders?.slice(0, 3) || [];
 
@@ -45,57 +46,23 @@ export default function AccountPage() {
     );
   }
 
+  const userInfo = user || {};
+  const fullName = userInfo.fullName || 'Khách hàng';
+  const email = userInfo.email || '';
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Sidebar */}
-        <aside className="lg:col-span-1">
-          <div className="bg-[#FAF8F5] border border-brand-warm rounded-2xl p-5 sticky top-24">
-            <div className="flex items-center gap-3 pb-5 mb-3 border-b border-brand-warm">
-              <div className="w-12 h-12 rounded-full overflow-hidden bg-brand-sand">
-                <Image
-                  src={user?.user?.avatar || '/avatar-placeholder.jpg'}
-                  alt={user?.user?.fullName || 'User'}
-                  width={48}
-                  height={48}
-                  className="object-cover"
-                />
-              </div>
-              <div>
-                <p className="font-bold text-brand-dark">{user?.user?.fullName}</p>
-                <p className="text-xs text-brand-dark/50">{user?.user?.email}</p>
-              </div>
-            </div>
-            <nav className="space-y-1">
-              {menuItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-sm text-brand-dark/70 hover:bg-brand-sand hover:text-brand-dark transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Icon size={16} />
-                      <span>{item.label}</span>
-                    </div>
-                    ›
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
-        </aside>
+        <AccountSidebar />
 
-        {/* Main Content */}
         <div className="lg:col-span-3 space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-[#FAF8F5] border border-brand-warm rounded-2xl p-4 text-center">
-              <p className="text-2xl font-bold text-brand-accent">{user?.totalOrder || 0}</p>
+              <p className="text-2xl font-bold text-brand-accent">{userInfo.totalOrder || 0}</p>
               <p className="text-xs text-brand-dark/50">Đơn hàng đã đặt</p>
             </div>
             <div className="bg-[#FAF8F5] border border-brand-warm rounded-2xl p-4 text-center">
-              <p className="text-2xl font-bold text-brand-accent">{formatCurrency(user?.totalSpent || 0)}</p>
+              <p className="text-2xl font-bold text-brand-accent">{formatCurrency(userInfo.totalSpent || 0)}</p>
               <p className="text-xs text-brand-dark/50">Tổng chi tiêu</p>
             </div>
             <div className="bg-[#FAF8F5] border border-brand-warm rounded-2xl p-4 text-center">

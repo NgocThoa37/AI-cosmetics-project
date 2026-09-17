@@ -263,3 +263,14 @@ export interface DashboardStats {
   totalRevenue: number;
   pendingReviews: number;
 }
+
+export interface Brand {
+  id: number;
+  name: string;
+  slug?: string;
+  brandCode?: string;
+  origin?: string;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}

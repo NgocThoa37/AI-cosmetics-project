@@ -30,6 +30,14 @@ class AuthService extends BaseService {
   async logout(): Promise<{ message: string }> {
     return this.post<{ message: string }>(API_ENDPOINTS.AUTH_LOGOUT);
   }
+
+  async getMyProfile(): Promise<User> {
+    return this.get<User>(API_ENDPOINTS.USERS_ME);
+  }
+
+  async updateMyProfile(data: Partial<User>): Promise<User> {
+    return this.put<User>(API_ENDPOINTS.USERS_ME, data);
+  }
 }
 
 export const authService = new AuthService();

@@ -14,6 +14,9 @@ interface OrderCardProps {
   onReview?: (order: Order) => void;
 }
 
+// ✅ Định nghĩa placeholder image
+const PLACEHOLDER_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="%23999" stroke-width="2"%3E%3Crect x="3" y="3" width="18" height="18" rx="2"%3E%3C/rect%3E%3Ccircle cx="8.5" cy="8.5" r="1.5"%3E%3C/circle%3E%3Cpath d="M21 15l-5-5L5 21"%3E%3C/path%3E%3C/svg%3E';
+
 export const OrderCard: React.FC<OrderCardProps> = ({ order, onCancel, onRebuy, onReview }) => {
   const canCancel = order.orderStatus === OrderStatus.PENDING || order.orderStatus === OrderStatus.CONFIRMED;
   const canReview = order.orderStatus === OrderStatus.DELIVERED;
@@ -21,10 +24,21 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onCancel, onRebuy, 
 
   const totalItems = order.details?.reduce((sum, d) => sum + d.quantity, 0) || 0;
 
+  // ✅ Hàm lấy ảnh an toàn
+  const getImageUrl = (detail: any): string => {
+    const product = detail.product;
+    const images = product?.images || [];
+    const mainImage = images.find((img: any) => img.isMain);
+    return mainImage?.imageUrl || images[0]?.imageUrl || PLACEHOLDER_IMAGE;
+  };
+
   return (
     <div className="bg-[#FAF8F5] border border-brand-warm rounded-2xl p-5 hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start mb-3 flex-wrap gap-2">
-        <div><p className="font-mono text-sm font-bold text-brand-dark/50">{order.orderCode}</p><p className="text-xs text-brand-dark/40">{formatDate(order.createdAt)}</p></div>
+        <div>
+          <p className="font-mono text-sm font-bold text-brand-dark/50">{order.orderCode}</p>
+          <p className="text-xs text-brand-dark/40">{formatDate(order.createdAt)}</p>
+        </div>
         <OrderStatusComponent status={order.orderStatus} />
       </div>
 
@@ -32,19 +46,54 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onCancel, onRebuy, 
         {order.details?.slice(0, 3).map((detail) => (
           <Link key={detail.id} href={`/products/${detail.productId}`} className="block">
             <div className="w-16 h-16 rounded-lg overflow-hidden bg-white border border-brand-warm flex-shrink-0">
-              <Image src={detail.product?.images?.find(img => img.isMain)?.imageUrl || '/placeholder.jpg'} alt="" width={64} height={64} className="object-cover" />
+              <Image 
+                src={getImageUrl(detail)} 
+                alt={detail.product?.name || 'Sản phẩm'} 
+                width={64} 
+                height={64} 
+                className="object-cover"
+                onError={(e) => {
+                  e.currentTarget.src = PLACEHOLDER_IMAGE;
+                }}
+              />
             </div>
           </Link>
         ))}
-        {order.details && order.details.length > 3 && <div className="flex items-center text-xs text-brand-dark/50">+{order.details.length - 3}</div>}
+        {order.details && order.details.length > 3 && (
+          <div className="flex items-center text-xs text-brand-dark/50">+{order.details.length - 3}</div>
+        )}
       </div>
 
       <div className="flex flex-wrap justify-between items-center mt-3 pt-3 border-t border-brand-warm/50 gap-3">
-        <div><span className="text-xs text-brand-dark/50">Tổng số tiền ({totalItems} sản phẩm):</span><span className="text-sm font-bold text-brand-accent ml-2">{formatCurrency(order.totalAmount)}</span></div>
+        <div>
+          <span className="text-xs text-brand-dark/50">Tổng số tiền ({totalItems} sản phẩm):</span>
+          <span className="text-sm font-bold text-brand-accent ml-2">{formatCurrency(order.totalAmount)}</span>
+        </div>
         <div className="flex gap-2">
-          {canCancel && onCancel && <button onClick={() => onCancel(order.id)} className="border border-red-500 text-red-600 hover:bg-red-50 px-4 py-1.5 rounded-lg text-[11px] font-bold transition-colors">Hủy đơn</button>}
-          {canRebuy && onRebuy && <button onClick={() => onRebuy(order)} className="bg-brand-accent hover:bg-brand-accent/80 text-white px-4 py-1.5 rounded-lg text-[11px] font-bold transition-colors">Mua lại</button>}
-          {canReview && onReview && <button onClick={() => onReview(order)} className="border border-brand-warm text-brand-dark hover:border-brand-accent hover:text-brand-accent px-4 py-1.5 rounded-lg text-[11px] font-bold transition-colors">Đánh giá</button>}
+          {canCancel && onCancel && (
+            <button 
+              onClick={() => onCancel(order.id)} 
+              className="border border-red-500 text-red-600 hover:bg-red-50 px-4 py-1.5 rounded-lg text-[11px] font-bold transition-colors"
+            >
+              Hủy đơn
+            </button>
+          )}
+          {canRebuy && onRebuy && (
+            <button 
+              onClick={() => onRebuy(order)} 
+              className="bg-brand-accent hover:bg-brand-accent/80 text-white px-4 py-1.5 rounded-lg text-[11px] font-bold transition-colors"
+            >
+              Mua lại
+            </button>
+          )}
+          {canReview && onReview && (
+            <button 
+              onClick={() => onReview(order)} 
+              className="border border-brand-warm text-brand-dark hover:border-brand-accent hover:text-brand-accent px-4 py-1.5 rounded-lg text-[11px] font-bold transition-colors"
+            >
+              Đánh giá
+            </button>
+          )}
         </div>
       </div>
     </div>

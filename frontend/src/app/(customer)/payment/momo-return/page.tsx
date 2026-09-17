@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/common/Button';
 import { CheckCircle2, XCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function MomoReturnPage() {
   const router = useRouter();
@@ -14,13 +15,28 @@ export default function MomoReturnPage() {
   useEffect(() => {
     const resultCode = searchParams.get('resultCode');
     const moOrderId = searchParams.get('orderId');
+    
+    console.log('🔍 [MOMO RETURN] resultCode:', resultCode);
+    console.log('🔍 [MOMO RETURN] orderId:', moOrderId);
+    
     if (resultCode === '0') { 
       setStatus('success'); 
       setOrderId(moOrderId || ''); 
+      toast.success('Thanh toán MoMo thành công!');
     } else { 
       setStatus('failed'); 
+      toast.error('Thanh toán MoMo thất bại hoặc bị hủy');
     }
   }, [searchParams]);
+
+  // ✅ SỬA: Chuyển về DANH SÁCH đơn hàng, không phải chi tiết
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      // ✅ Luôn về danh sách đơn hàng
+      router.push('/account/orders');
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [router]);
 
   if (status === 'loading') {
     return (
@@ -41,9 +57,11 @@ export default function MomoReturnPage() {
             <h2 className="text-xl font-bold text-brand-dark">Thanh toán thành công!</h2>
             <p className="text-sm text-brand-dark/60 mt-2 mb-6">
               Đơn hàng {orderId} đã được thanh toán qua MoMo.
+              <br />
+              Đang chuyển đến danh sách đơn hàng...
             </p>
-            <Button onClick={() => router.push(`/account/orders/${orderId}`)}>
-              Xem chi tiết đơn hàng
+            <Button onClick={() => router.push('/account/orders')}>
+              Xem danh sách đơn hàng
             </Button>
           </>
         ) : (
@@ -54,9 +72,11 @@ export default function MomoReturnPage() {
             <h2 className="text-xl font-bold text-brand-dark">Thanh toán thất bại</h2>
             <p className="text-sm text-brand-dark/60 mt-2 mb-6">
               Có lỗi xảy ra, vui lòng thử lại.
+              <br />
+              Đang chuyển đến danh sách đơn hàng...
             </p>
-            <Button variant="outline" onClick={() => router.push('/cart')}>
-              Quay lại giỏ hàng
+            <Button variant="outline" onClick={() => router.push('/account/orders')}>
+              Xem danh sách đơn hàng
             </Button>
           </>
         )}

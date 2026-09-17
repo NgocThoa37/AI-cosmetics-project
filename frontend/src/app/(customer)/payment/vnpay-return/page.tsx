@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/common/Button';
 import { CheckCircle2, XCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function VnpayReturnPage() {
   const router = useRouter();
@@ -15,13 +16,27 @@ export default function VnpayReturnPage() {
     const vnpResponseCode = searchParams.get('vnp_ResponseCode');
     const vnpTxnRef = searchParams.get('vnp_TxnRef');
     
+    console.log('🔍 [VNPAY RETURN] vnpResponseCode:', vnpResponseCode);
+    console.log('🔍 [VNPAY RETURN] vnpTxnRef:', vnpTxnRef);
+    
     if (vnpResponseCode === '00') {
       setStatus('success');
       setOrderId(vnpTxnRef || '');
+      toast.success('Thanh toán VNPAY thành công!');
     } else {
       setStatus('failed');
+      toast.error('Thanh toán VNPAY thất bại hoặc bị hủy');
     }
   }, [searchParams]);
+
+  // ✅ SỬA: Chuyển về DANH SÁCH đơn hàng, không phải chi tiết
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      // ✅ Luôn về danh sách đơn hàng
+      router.push('/account/orders');
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [router]);
 
   if (status === 'loading') {
     return (
@@ -42,9 +57,11 @@ export default function VnpayReturnPage() {
             <h2 className="text-xl font-bold text-brand-dark">Thanh toán thành công!</h2>
             <p className="text-sm text-brand-dark/60 mt-2 mb-6">
               Đơn hàng {orderId} đã được thanh toán qua VNPAY.
+              <br />
+              Đang chuyển đến danh sách đơn hàng...
             </p>
-            <Button onClick={() => router.push(`/account/orders/${orderId}`)}>
-              Xem chi tiết đơn hàng
+            <Button onClick={() => router.push('/account/orders')}>
+              Xem danh sách đơn hàng
             </Button>
           </>
         ) : (
@@ -55,9 +72,11 @@ export default function VnpayReturnPage() {
             <h2 className="text-xl font-bold text-brand-dark">Thanh toán thất bại</h2>
             <p className="text-sm text-brand-dark/60 mt-2 mb-6">
               Có lỗi xảy ra trong quá trình thanh toán. Vui lòng thử lại.
+              <br />
+              Đang chuyển đến danh sách đơn hàng...
             </p>
-            <Button variant="outline" onClick={() => router.push('/cart')}>
-              Quay lại giỏ hàng
+            <Button variant="outline" onClick={() => router.push('/account/orders')}>
+              Xem danh sách đơn hàng
             </Button>
           </>
         )}

@@ -19,6 +19,7 @@ export const API_ENDPOINTS = {
   
   // Products
   PRODUCTS: '/products',
+  PRODUCTS_BEST_SELLERS: '/products/best-sellers', // ✅ THÊM DÒNG NÀY
   PRODUCTS_DETAILS: '/products/details',
   PRODUCTS_IMAGES: '/products/images',
   PRODUCTS_SIZES: '/products/sizes',
@@ -27,6 +28,9 @@ export const API_ENDPOINTS = {
   
   // Categories
   CATEGORIES: '/categories',
+
+  // Brands
+  BRANDS: '/brands',
   
   // Cart
   CART: '/cart',

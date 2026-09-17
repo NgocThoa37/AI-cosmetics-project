@@ -7,7 +7,7 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { useCart } from '@/hooks/useCart';
-import { useAuth } from '@/hooks/useAuth';
+import { useCustomerAuth } from '@/hooks/useCustomerAuth';
 import { useAppDispatch } from '@/store/hooks';
 import { createOrder } from '@/store/slices/order.slice';
 import { paymentService } from '@/services/api/payment.service';
@@ -16,13 +16,17 @@ import { MapPin, ShieldCheck, CreditCard, ArrowLeft } from 'lucide-react';
 import { PaymentMethod } from '@/types';
 import toast from 'react-hot-toast';
 
+const PLACEHOLDER_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="%23999" stroke-width="2"%3E%3Crect x="3" y="3" width="18" height="18" rx="2"%3E%3C/rect%3E%3Ccircle cx="8.5" cy="8.5" r="1.5"%3E%3C/circle%3E%3Cpath d="M21 15l-5-5L5 21"%3E%3C/path%3E%3C/svg%3E';
+
 export default function CheckoutPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
-  const { isAuthenticated, user } = useAuth();
-  const { cart, loading: cartLoading } = useCart();
+  const { user } = useCustomerAuth();
+  const { cart, loading: cartLoading, clearCart } = useCart(); // ✅ Thêm clearCart
+  
   const [selectedDetailIds, setSelectedDetailIds] = useState<number[]>([]);
+  const [buyNowItem, setBuyNowItem] = useState<any>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.COD);
   const [recipientName, setRecipientName] = useState('');
   const [recipientPhone, setRecipientPhone] = useState('');
@@ -30,26 +34,108 @@ export default function CheckoutPage() {
   const [note, setNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const productDetailId = searchParams.get('productDetailId');
+  const quantity = parseInt(searchParams.get('quantity') || '1');
+
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login');
+    const token = localStorage.getItem('customer_token');
+    console.log('🔍 [CHECKOUT] Token:', token ? 'Có token' : 'Không có token');
+    
+    if (!token) {
+      console.log('⚠️ [CHECKOUT] No token, redirect to home');
+      router.push('/');
       return;
     }
-    const ids = searchParams.get('ids');
-    if (ids) setSelectedDetailIds(ids.split(',').map(Number));
-    if (user?.user?.fullName) setRecipientName(user.user.fullName);
-    if (user?.user?.phone) setRecipientPhone(user.user.phone);
-  }, [isAuthenticated, router, searchParams, user]);
 
-  const selectedDetails = cart?.details?.filter(item => selectedDetailIds.includes(item.id)) || [];
-  const subtotal = selectedDetails.reduce((sum, item) => {
-    const price = item.product?.price || 0;
-    return sum + price * item.quantity;
-  }, 0);
+    if (productDetailId) {
+      fetch(`/api/products/details/${productDetailId}`)
+        .then(res => res.json())
+        .then(data => {
+          console.log('🔍 API Response:', data);
+          const productData = data.data || data;
+          setBuyNowItem({
+            ...productData,
+            id: productData.id || productData.productDetailId,
+            quantity: quantity,
+            product: productData.product,
+          });
+        })
+        .catch(err => {
+          console.error('❌ Failed to get product:', err);
+          toast.error('Không thể lấy thông tin sản phẩm');
+          router.push('/cart');
+        });
+      return;
+    }
+
+    const ids = searchParams.get('ids');
+    console.log('🔍 [CHECKOUT] ids:', ids);
+    
+    if (ids) {
+      setSelectedDetailIds(ids.split(',').map(Number));
+    } else {
+      console.log('⚠️ [CHECKOUT] No ids found, redirecting to cart');
+      router.push('/cart');
+      return;
+    }
+    
+    const userInfo = user?.user || user || {};
+    if (userInfo.fullName) setRecipientName(userInfo.fullName);
+    if (userInfo.phone) setRecipientPhone(userInfo.phone);
+  }, [router, searchParams, user, productDetailId, quantity]);
+
+  // Lấy danh sách sản phẩm thanh toán
+  let selectedDetails = [];
+  let subtotal = 0;
+
+  console.log('🔍 buyNowItem:', buyNowItem);
+  console.log('🔍 cart?.details:', cart?.details);
+  console.log('🔍 selectedDetailIds:', selectedDetailIds);
+
+  if (buyNowItem) {
+    selectedDetails = [buyNowItem];
+    subtotal = (buyNowItem.product?.price || 0) * buyNowItem.quantity;
+    console.log('✅ MUA NGAY selectedDetails:', selectedDetails);
+  } else {
+    selectedDetails = cart?.details?.filter(item => selectedDetailIds.includes(item.id)) || [];
+    subtotal = selectedDetails.reduce((sum, item) => {
+      const product = (item as any).product;
+      const productDetail = item.productDetail;
+      const productFromDetail = (productDetail as any)?.product;
+      const finalProduct = product || productFromDetail;
+      const price = finalProduct?.price || 0;
+      return sum + price * item.quantity;
+    }, 0);
+    console.log('✅ TỪ GIỎ HÀNG selectedDetails:', selectedDetails);
+  }
+
+  console.log('✅ subtotal:', subtotal);
+
   const shippingFee = subtotal >= 500000 ? 0 : 30000;
   const total = subtotal + shippingFee;
 
+  const getImageUrl = (item: any): string => {
+    const product = item.product || item;
+    const productDetail = item.productDetail || item;
+    
+    if (product?.images && product.images.length > 0) {
+      const mainImage = product.images.find((img: any) => img.isMain);
+      if (mainImage?.imageUrl) return mainImage.imageUrl;
+      if (product.images[0]?.imageUrl) return product.images[0].imageUrl;
+    }
+    
+    if (productDetail?.images && productDetail.images.length > 0) {
+      const mainImage = productDetail.images.find((img: any) => img.isMain);
+      if (mainImage?.imageUrl) return mainImage.imageUrl;
+      if (productDetail.images[0]?.imageUrl) return productDetail.images[0].imageUrl;
+    }
+    
+    return PLACEHOLDER_IMAGE;
+  };
+
   const handlePlaceOrder = async () => {
+    console.log('🔥🔥🔥 [ĐẶT HÀNG] BẮT ĐẦU 🔥🔥🔥');
+    
     if (!recipientName || !recipientPhone || !recipientAddress) {
       toast.error('Vui lòng điền đầy đủ thông tin giao hàng');
       return;
@@ -57,18 +143,60 @@ export default function CheckoutPage() {
 
     setIsSubmitting(true);
     try {
+      let items = [];
+
+      if (buyNowItem) {
+        console.log('🔍 buyNowItem:', buyNowItem);
+        console.log('🔍 buyNowItem.id:', buyNowItem.id);
+        
+        if (!buyNowItem.id) {
+          toast.error('Không tìm thấy ID sản phẩm');
+          setIsSubmitting(false);
+          return;
+        }
+        
+        items = [{
+          productDetailId: buyNowItem.id,
+          quantity: buyNowItem.quantity
+        }];
+      } else {
+        console.log('🔍 selectedDetails:', selectedDetails);
+        items = selectedDetails.map(item => ({ 
+          productDetailId: item.productDetailId, 
+          quantity: item.quantity 
+        }));
+      }
+
+      console.log('🔍 items:', items);
+
+      if (items.length === 0) {
+        toast.error('Không có sản phẩm để đặt hàng');
+        setIsSubmitting(false);
+        return;
+      }
+
       const orderData = {
         shippingAddress: recipientAddress,
         shippingPhone: recipientPhone,
         note: note || undefined,
         paymentMethod,
-        items: selectedDetails.map(item => ({ 
-          productDetailId: item.productDetailId, 
-          quantity: item.quantity 
-        })),
+        items,
       };
 
+      console.log('📤 [ĐẶT HÀNG] orderData:', JSON.stringify(orderData, null, 2));
+
       const order = await dispatch(createOrder(orderData)).unwrap();
+      console.log('✅ [ĐẶT HÀNG] Order created:', order);
+
+      if (!order || !order.id) {
+        toast.error('Không thể tạo đơn hàng');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // ✅ XÓA GIỎ HÀNG SAU KHI ĐẶT HÀNG THÀNH CÔNG
+      await clearCart();
+      console.log('✅ [ĐẶT HÀNG] Cart cleared');
 
       if (paymentMethod === PaymentMethod.MOMO) {
         const momoRes = await paymentService.createMomoPayment(order.id, `${window.location.origin}/payment/momo-return`);
@@ -80,8 +208,9 @@ export default function CheckoutPage() {
         router.push(`/account/orders/${order.id}?success=true`);
         toast.success('Đặt hàng thành công!');
       }
-    } catch (error) {
-      toast.error('Đặt hàng thất bại, vui lòng thử lại');
+    } catch (error: any) {
+      console.error('❌ [ĐẶT HÀNG] Error:', error);
+      toast.error(error.response?.data?.message || 'Đặt hàng thất bại, vui lòng thử lại');
     } finally {
       setIsSubmitting(false);
     }
@@ -95,7 +224,7 @@ export default function CheckoutPage() {
     );
   }
 
-  if (selectedDetails.length === 0) {
+  if (selectedDetails.length === 0 && !buyNowItem) {
     return (
       <div className="flex justify-center py-20">
         <div className="text-center">
@@ -118,9 +247,8 @@ export default function CheckoutPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Shipping Address */}
+          {/* Địa chỉ nhận hàng */}
           <div className="bg-[#FAF8F5] border border-brand-warm rounded-2xl p-6">
             <div className="flex items-start gap-3">
               <MapPin size={20} className="text-brand-accent flex-shrink-0 mt-0.5" />
@@ -150,7 +278,7 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Payment Method */}
+          {/* Phương thức thanh toán */}
           <div className="bg-[#FAF8F5] border border-brand-warm rounded-2xl p-6">
             <div className="flex items-start gap-3">
               <CreditCard size={20} className="text-brand-accent flex-shrink-0 mt-0.5" />
@@ -182,7 +310,7 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Order Note */}
+          {/* Ghi chú */}
           <div className="bg-[#FAF8F5] border border-brand-warm rounded-2xl p-6">
             <label className="block font-bold text-brand-dark mb-2">Ghi chú đơn hàng</label>
             <textarea 
@@ -195,29 +323,41 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        {/* Right Column - Summary */}
+        {/* Tóm tắt đơn hàng */}
         <div className="lg:col-span-1">
           <div className="bg-[#FAF8F5] border border-brand-warm rounded-2xl p-6 sticky top-24">
             <h3 className="font-bold text-brand-dark mb-4 pb-3 border-b border-brand-warm">Đơn hàng của bạn</h3>
             <div className="space-y-3 max-h-80 overflow-y-auto mb-4">
-              {selectedDetails.map((item) => (
-                <div key={item.id} className="flex gap-3 text-sm">
-                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-white border border-brand-warm flex-shrink-0">
-                    <Image 
-                      src={item.product?.images?.find(img => img.isMain)?.imageUrl || '/placeholder.jpg'} 
-                      alt="" 
-                      width={48} 
-                      height={48} 
-                      className="object-cover" 
-                    />
+              {selectedDetails.map((item) => {
+                const product = (item as any).product || item.product;
+                const productDetail = item.productDetail;
+                const productName = product?.name || 'Sản phẩm';
+                const price = product?.price || 0;
+                const imageUrl = getImageUrl(item);
+                const qty = item.quantity || 1;
+                
+                return (
+                  <div key={item.id} className="flex gap-3 text-sm">
+                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-white border border-brand-warm flex-shrink-0">
+                      <Image 
+                        src={imageUrl} 
+                        alt={productName} 
+                        width={48} 
+                        height={48} 
+                        className="object-cover" 
+                        onError={(e) => {
+                          e.currentTarget.src = PLACEHOLDER_IMAGE;
+                        }}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium line-clamp-1">{productName}</p>
+                      <p className="text-xs text-brand-dark/50">SL: {qty}</p>
+                    </div>
+                    <div className="font-medium">{formatCurrency(price * qty)}</div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium line-clamp-1">{item.product?.name}</p>
-                    <p className="text-xs text-brand-dark/50">SL: {item.quantity}</p>
-                  </div>
-                  <div className="font-medium">{formatCurrency((item.product?.price || 0) * item.quantity)}</div>
-                </div>
-              ))}
+                );
+              })}
             </div>
             <div className="space-y-2 pt-3 border-t border-brand-warm">
               <div className="flex justify-between text-sm">
