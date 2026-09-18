@@ -127,7 +127,7 @@ export default function AdminBestSellers() {
 
   const formatCurrency = (amount: number) => {
     if (!amount || isNaN(amount)) return '0đ';
-    return amount.toLocaleString('vi-VN') + 'đ';
+    return Number(amount || 0).toLocaleString('vi-VN') + 'đ';
   };
 
   if (loading) {

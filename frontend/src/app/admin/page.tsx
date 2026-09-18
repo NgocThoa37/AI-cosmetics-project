@@ -83,7 +83,7 @@ export default function AdminDashboard() {
   // Format tiền tệ
   const formatCurrency = (amount: number) => {
     if (!amount) return '0đ';
-    return amount.toLocaleString('vi-VN') + 'đ';
+    return Number(amount || 0).toLocaleString('vi-VN') + 'đ';
   };
 
   const statsCards = [

@@ -138,7 +138,7 @@ export default function AdminProducts() {
     { 
       key: 'price', 
       header: 'Giá',
-      render: (item: Product) => `${item.price?.toLocaleString('vi-VN') || 0}đ`
+      render: (item: Product) => `${Number(item.price || 0).toLocaleString('vi-VN')}đ`
     },
     { 
       key: 'category', 
@@ -240,7 +240,7 @@ export default function AdminProducts() {
             <div className="p-5 space-y-3">
               <div><span className="font-semibold">ID:</span> {selectedProduct.id}</div>
               <div><span className="font-semibold">Tên:</span> {selectedProduct.name}</div>
-              <div><span className="font-semibold">Giá:</span> {selectedProduct.price?.toLocaleString('vi-VN') || 0}đ</div>
+              <div><span className="font-semibold">Giá:</span> {Number(selectedProduct.price || 0).toLocaleString('vi-VN')}đ</div>
               <div><span className="font-semibold">Danh mục:</span> {selectedProduct.category?.name || '—'}</div>
               <div><span className="font-semibold">Thương hiệu:</span> {selectedProduct.brand?.name || '—'}</div>
               <div><span className="font-semibold">Trạng thái:</span> {getStatusLabel(selectedProduct.status || 'active')}</div>
