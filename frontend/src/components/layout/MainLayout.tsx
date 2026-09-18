@@ -2,8 +2,7 @@
 
 import React from 'react';
 import Header from './Header';
-import { Footer } from './Footer'; // ✅ Giữ nguyên import { Footer }
-import { ChatBox } from '@/components/chat/ChatBox';
+import { Footer } from './Footer';
 import { useAuth } from '@/hooks/useAuth';
 import { useCustomerAuth } from '@/hooks/useCustomerAuth';
 import ChatBot from '@/components/ai/ChatBot';
@@ -24,7 +23,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       <Header user={user} />
       <main className="flex-1">{children}</main>
       <Footer />
-      <ChatBox />
       <ChatBot />
     </div>
   );

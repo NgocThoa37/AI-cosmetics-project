@@ -1,7 +1,7 @@
 // src/app/products/page.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ProductCard } from '@/components/product/ProductCard';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
@@ -10,7 +10,7 @@ import { fetchProducts, fetchCategories, fetchBrands } from '@/store/slices/prod
 import { addToCart } from '@/store/slices/cart.slice';
 import { useRouter } from 'next/navigation';
 
-export default function ProductsPage() {
+function ProductsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
@@ -124,5 +124,13 @@ export default function ProductsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center py-20"><LoadingSpinner size="lg" /></div>}>
+      <ProductsContent />
+    </Suspense>
   );
 }

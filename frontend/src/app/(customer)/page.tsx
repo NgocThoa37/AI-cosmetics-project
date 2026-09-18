@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { Hero } from '@/components/home/Hero';
 import { ProductCard } from '@/components/product/ProductCard';
 import { Button } from '@/components/common/Button';
@@ -10,7 +10,7 @@ import { fetchProducts, fetchCategories, fetchBestSellers } from '@/store/slices
 import { addToCart } from '@/store/slices/cart.slice';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function HomePage() {
+function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
@@ -244,5 +244,13 @@ export default function HomePage() {
         )}
       </section>
     </>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center py-20"><LoadingSpinner size="lg" /></div>}>
+      <HomeContent />
+    </Suspense>
   );
 }

@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/common/Button';
 import { CheckCircle2, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-export default function VnpayReturnPage() {
+function VnpayReturnContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<'loading' | 'success' | 'failed'>('loading');
@@ -82,5 +82,13 @@ export default function VnpayReturnPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function VnpayReturnPage() {
+  return (
+    <Suspense fallback={<div>Đang tải...</div>}>
+      <VnpayReturnContent />
+    </Suspense>
   );
 }

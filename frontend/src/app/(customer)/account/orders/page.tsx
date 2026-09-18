@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -22,7 +22,8 @@ const getProductImage = (detail: any): string => {
   return '/placeholder-product.jpg';
 };
 
-export default function OrdersPage() {
+// ✅ Component con chứa logic dùng useSearchParams
+function OrdersContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated } = useCustomerAuth();
@@ -37,27 +38,22 @@ export default function OrdersPage() {
   const paymentStatus = searchParams.get('payment');
 
   useEffect(() => {
-    // ✅ Nếu có token từ URL, lưu vào localStorage
     if (tokenFromUrl) {
       localStorage.setItem('customer_token', tokenFromUrl);
-      // ✅ Xóa token khỏi URL để không bị lộ
       const newUrl = window.location.pathname + window.location.search.replace(/&?token=[^&]*/, '');
       router.replace(newUrl);
     }
 
-    // ✅ Nếu có message từ thanh toán, hiển thị toast
     if (paymentMessage) {
       if (paymentStatus === 'success') {
         toast.success(decodeURIComponent(paymentMessage) || 'Thanh toán thành công!');
       } else {
         toast.error(decodeURIComponent(paymentMessage) || 'Thanh toán thất bại');
       }
-      // Xóa message khỏi URL
       const newUrl = window.location.pathname + window.location.search.replace(/&?message=[^&]*/, '');
       router.replace(newUrl);
     }
 
-    // ✅ Nếu đã đăng nhập, lấy danh sách đơn hàng
     if (isAuthenticated) {
       dispatch(fetchMyOrders());
     }
@@ -137,7 +133,6 @@ export default function OrdersPage() {
                     </span>
                   </div>
 
-                  {/* ✅ Hiển thị ảnh + tên sản phẩm */}
                   <div className="flex gap-4 overflow-x-auto pb-3">
                     {order.details?.slice(0, 3).map((detail) => (
                       <div key={detail.id} className="flex flex-col items-center gap-1 flex-shrink-0 w-16">
@@ -176,5 +171,18 @@ export default function OrdersPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// ✅ Export default với Suspense wrapper
+export default function OrdersPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex justify-center py-20">
+        <LoadingSpinner size="lg" />
+      </div>
+    }>
+      <OrdersContent />
+    </Suspense>
   );
 }

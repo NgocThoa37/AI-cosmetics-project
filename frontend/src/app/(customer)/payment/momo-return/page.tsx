@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/common/Button';
 import { CheckCircle2, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-export default function MomoReturnPage() {
+function MomoReturnContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<'loading' | 'success' | 'failed'>('loading');
@@ -82,5 +82,13 @@ export default function MomoReturnPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function MomoReturnPage() {
+  return (
+    <Suspense fallback={<div>Đang tải...</div>}>
+      <MomoReturnContent />
+    </Suspense>
   );
 }

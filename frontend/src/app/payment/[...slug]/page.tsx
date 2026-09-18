@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/common/Button';
 import { CheckCircle, XCircle } from 'lucide-react';
 
-export default function PaymentCatchAll() {
+function PaymentCatchAllContent() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
@@ -55,5 +55,13 @@ export default function PaymentCatchAll() {
         <Button variant="outline" onClick={() => router.push('/')}>🏠 Về trang chủ</Button>
       </div>
     </div>
+  );
+}
+
+export default function PaymentCatchAll() {
+  return (
+    <Suspense fallback={<div>Đang tải...</div>}>
+      <PaymentCatchAllContent />
+    </Suspense>
   );
 }

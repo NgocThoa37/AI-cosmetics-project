@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/common/Button';
@@ -18,13 +18,13 @@ import toast from 'react-hot-toast';
 
 const PLACEHOLDER_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="%23999" stroke-width="2"%3E%3Crect x="3" y="3" width="18" height="18" rx="2"%3E%3C/rect%3E%3Ccircle cx="8.5" cy="8.5" r="1.5"%3E%3C/circle%3E%3Cpath d="M21 15l-5-5L5 21"%3E%3C/path%3E%3C/svg%3E';
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
   const { user } = useCustomerAuth();
-  const { cart, loading: cartLoading, clearCart } = useCart(); // ✅ Thêm clearCart
-  
+  const { cart, loading: cartLoading, clearCart } = useCart();
+
   const [selectedDetailIds, setSelectedDetailIds] = useState<number[]>([]);
   const [buyNowItem, setBuyNowItem] = useState<any>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.COD);
@@ -39,10 +39,7 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     const token = localStorage.getItem('customer_token');
-    console.log('🔍 [CHECKOUT] Token:', token ? 'Có token' : 'Không có token');
-    
     if (!token) {
-      console.log('⚠️ [CHECKOUT] No token, redirect to home');
       router.push('/');
       return;
     }
@@ -51,7 +48,6 @@ export default function CheckoutPage() {
       fetch(`/api/products/details/${productDetailId}`)
         .then(res => res.json())
         .then(data => {
-          console.log('🔍 API Response:', data);
           const productData = data.data || data;
           setBuyNowItem({
             ...productData,
@@ -69,33 +65,24 @@ export default function CheckoutPage() {
     }
 
     const ids = searchParams.get('ids');
-    console.log('🔍 [CHECKOUT] ids:', ids);
-    
     if (ids) {
       setSelectedDetailIds(ids.split(',').map(Number));
     } else {
-      console.log('⚠️ [CHECKOUT] No ids found, redirecting to cart');
       router.push('/cart');
       return;
     }
-    
+
     const userInfo = user?.user || user || {};
     if (userInfo.fullName) setRecipientName(userInfo.fullName);
     if (userInfo.phone) setRecipientPhone(userInfo.phone);
   }, [router, searchParams, user, productDetailId, quantity]);
 
-  // Lấy danh sách sản phẩm thanh toán
   let selectedDetails = [];
   let subtotal = 0;
-
-  console.log('🔍 buyNowItem:', buyNowItem);
-  console.log('🔍 cart?.details:', cart?.details);
-  console.log('🔍 selectedDetailIds:', selectedDetailIds);
 
   if (buyNowItem) {
     selectedDetails = [buyNowItem];
     subtotal = (buyNowItem.product?.price || 0) * buyNowItem.quantity;
-    console.log('✅ MUA NGAY selectedDetails:', selectedDetails);
   } else {
     selectedDetails = cart?.details?.filter(item => selectedDetailIds.includes(item.id)) || [];
     subtotal = selectedDetails.reduce((sum, item) => {
@@ -106,10 +93,7 @@ export default function CheckoutPage() {
       const price = finalProduct?.price || 0;
       return sum + price * item.quantity;
     }, 0);
-    console.log('✅ TỪ GIỎ HÀNG selectedDetails:', selectedDetails);
   }
-
-  console.log('✅ subtotal:', subtotal);
 
   const shippingFee = subtotal >= 500000 ? 0 : 30000;
   const total = subtotal + shippingFee;
@@ -117,25 +101,23 @@ export default function CheckoutPage() {
   const getImageUrl = (item: any): string => {
     const product = item.product || item;
     const productDetail = item.productDetail || item;
-    
+
     if (product?.images && product.images.length > 0) {
       const mainImage = product.images.find((img: any) => img.isMain);
       if (mainImage?.imageUrl) return mainImage.imageUrl;
       if (product.images[0]?.imageUrl) return product.images[0].imageUrl;
     }
-    
+
     if (productDetail?.images && productDetail.images.length > 0) {
       const mainImage = productDetail.images.find((img: any) => img.isMain);
       if (mainImage?.imageUrl) return mainImage.imageUrl;
       if (productDetail.images[0]?.imageUrl) return productDetail.images[0].imageUrl;
     }
-    
+
     return PLACEHOLDER_IMAGE;
   };
 
   const handlePlaceOrder = async () => {
-    console.log('🔥🔥🔥 [ĐẶT HÀNG] BẮT ĐẦU 🔥🔥🔥');
-    
     if (!recipientName || !recipientPhone || !recipientAddress) {
       toast.error('Vui lòng điền đầy đủ thông tin giao hàng');
       return;
@@ -146,28 +128,22 @@ export default function CheckoutPage() {
       let items = [];
 
       if (buyNowItem) {
-        console.log('🔍 buyNowItem:', buyNowItem);
-        console.log('🔍 buyNowItem.id:', buyNowItem.id);
-        
         if (!buyNowItem.id) {
           toast.error('Không tìm thấy ID sản phẩm');
           setIsSubmitting(false);
           return;
         }
-        
+
         items = [{
           productDetailId: buyNowItem.id,
           quantity: buyNowItem.quantity
         }];
       } else {
-        console.log('🔍 selectedDetails:', selectedDetails);
-        items = selectedDetails.map(item => ({ 
-          productDetailId: item.productDetailId, 
-          quantity: item.quantity 
+        items = selectedDetails.map(item => ({
+          productDetailId: item.productDetailId,
+          quantity: item.quantity
         }));
       }
-
-      console.log('🔍 items:', items);
 
       if (items.length === 0) {
         toast.error('Không có sản phẩm để đặt hàng');
@@ -183,10 +159,7 @@ export default function CheckoutPage() {
         items,
       };
 
-      console.log('📤 [ĐẶT HÀNG] orderData:', JSON.stringify(orderData, null, 2));
-
       const order = await dispatch(createOrder(orderData)).unwrap();
-      console.log('✅ [ĐẶT HÀNG] Order created:', order);
 
       if (!order || !order.id) {
         toast.error('Không thể tạo đơn hàng');
@@ -194,9 +167,7 @@ export default function CheckoutPage() {
         return;
       }
 
-      // ✅ XÓA GIỎ HÀNG SAU KHI ĐẶT HÀNG THÀNH CÔNG
       await clearCart();
-      console.log('✅ [ĐẶT HÀNG] Cart cleared');
 
       if (paymentMethod === PaymentMethod.MOMO) {
         const momoRes = await paymentService.createMomoPayment(order.id, `${window.location.origin}/payment/momo-return`);
@@ -248,37 +219,35 @@ export default function CheckoutPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
-          {/* Địa chỉ nhận hàng */}
           <div className="bg-[#FAF8F5] border border-brand-warm rounded-2xl p-6">
             <div className="flex items-start gap-3">
               <MapPin size={20} className="text-brand-accent flex-shrink-0 mt-0.5" />
               <div className="flex-1">
                 <h3 className="font-bold text-brand-dark mb-4">Địa chỉ nhận hàng</h3>
                 <div className="space-y-3">
-                  <Input 
-                    label="Họ tên người nhận" 
-                    value={recipientName} 
-                    onChange={(e) => setRecipientName(e.target.value)} 
-                    placeholder="Nhập họ tên" 
+                  <Input
+                    label="Họ tên người nhận"
+                    value={recipientName}
+                    onChange={(e) => setRecipientName(e.target.value)}
+                    placeholder="Nhập họ tên"
                   />
-                  <Input 
-                    label="Số điện thoại" 
-                    value={recipientPhone} 
-                    onChange={(e) => setRecipientPhone(e.target.value)} 
-                    placeholder="Nhập số điện thoại" 
+                  <Input
+                    label="Số điện thoại"
+                    value={recipientPhone}
+                    onChange={(e) => setRecipientPhone(e.target.value)}
+                    placeholder="Nhập số điện thoại"
                   />
-                  <Input 
-                    label="Địa chỉ cụ thể" 
-                    value={recipientAddress} 
-                    onChange={(e) => setRecipientAddress(e.target.value)} 
-                    placeholder="Số nhà, tên đường..." 
+                  <Input
+                    label="Địa chỉ cụ thể"
+                    value={recipientAddress}
+                    onChange={(e) => setRecipientAddress(e.target.value)}
+                    placeholder="Số nhà, tên đường..."
                   />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Phương thức thanh toán */}
           <div className="bg-[#FAF8F5] border border-brand-warm rounded-2xl p-6">
             <div className="flex items-start gap-3">
               <CreditCard size={20} className="text-brand-accent flex-shrink-0 mt-0.5" />
@@ -290,17 +259,17 @@ export default function CheckoutPage() {
                     { value: PaymentMethod.MOMO, label: 'Ví điện tử MoMo' },
                     { value: PaymentMethod.VNPAY, label: 'VNPAY' },
                   ].map((method) => (
-                    <label 
-                      key={method.value} 
+                    <label
+                      key={method.value}
                       className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer ${paymentMethod === method.value ? 'border-brand-accent bg-brand-accent/5' : 'border-brand-warm bg-white'}`}
                     >
-                      <input 
-                        type="radio" 
-                        name="paymentMethod" 
-                        value={method.value} 
-                        checked={paymentMethod === method.value} 
-                        onChange={() => setPaymentMethod(method.value)} 
-                        className="text-brand-accent" 
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value={method.value}
+                        checked={paymentMethod === method.value}
+                        onChange={() => setPaymentMethod(method.value)}
+                        className="text-brand-accent"
                       />
                       <span className="text-sm">{method.label}</span>
                     </label>
@@ -310,41 +279,38 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Ghi chú */}
           <div className="bg-[#FAF8F5] border border-brand-warm rounded-2xl p-6">
             <label className="block font-bold text-brand-dark mb-2">Ghi chú đơn hàng</label>
-            <textarea 
-              value={note} 
-              onChange={(e) => setNote(e.target.value)} 
-              rows={3} 
-              placeholder="Ghi chú về giao hàng..." 
-              className="w-full px-4 py-3 bg-white border border-brand-warm rounded-xl focus:outline-none focus:border-brand-accent text-sm" 
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              rows={3}
+              placeholder="Ghi chú về giao hàng..."
+              className="w-full px-4 py-3 bg-white border border-brand-warm rounded-xl focus:outline-none focus:border-brand-accent text-sm"
             />
           </div>
         </div>
 
-        {/* Tóm tắt đơn hàng */}
         <div className="lg:col-span-1">
           <div className="bg-[#FAF8F5] border border-brand-warm rounded-2xl p-6 sticky top-24">
             <h3 className="font-bold text-brand-dark mb-4 pb-3 border-b border-brand-warm">Đơn hàng của bạn</h3>
             <div className="space-y-3 max-h-80 overflow-y-auto mb-4">
               {selectedDetails.map((item) => {
                 const product = (item as any).product || item.product;
-                const productDetail = item.productDetail;
                 const productName = product?.name || 'Sản phẩm';
                 const price = product?.price || 0;
                 const imageUrl = getImageUrl(item);
                 const qty = item.quantity || 1;
-                
+
                 return (
                   <div key={item.id} className="flex gap-3 text-sm">
                     <div className="w-12 h-12 rounded-lg overflow-hidden bg-white border border-brand-warm flex-shrink-0">
-                      <Image 
-                        src={imageUrl} 
-                        alt={productName} 
-                        width={48} 
-                        height={48} 
-                        className="object-cover" 
+                      <Image
+                        src={imageUrl}
+                        alt={productName}
+                        width={48}
+                        height={48}
+                        className="object-cover"
                         onError={(e) => {
                           e.currentTarget.src = PLACEHOLDER_IMAGE;
                         }}
@@ -384,5 +350,17 @@ export default function CheckoutPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex justify-center py-20">
+        <LoadingSpinner size="lg" />
+      </div>
+    }>
+      <CheckoutContent />
+    </Suspense>
   );
 }
