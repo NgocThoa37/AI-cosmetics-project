@@ -1,7 +1,12 @@
 import type { NextConfig } from 'next';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-cosmetics-project.onrender.com/api';
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  env: {
+    NEXT_PUBLIC_API_URL: API_URL,
+  },
   images: {
     remotePatterns: [
       {
@@ -19,23 +24,13 @@ const nextConfig: NextConfig = {
         hostname: 'via.placeholder.com',
         pathname: '/**',
       },
-      {
-        protocol: 'http',
-        hostname: 'localhost',
-        port: '3000',
-        pathname: '/uploads/**',
-      },
     ],
   },
   async rewrites() {
     return [
       {
-        source: '/api/:path*', // ✅ THÊM DÒNG NÀY
-        destination: 'http://localhost:3000/api/:path*', // ✅ Forward API request
-      },
-      {
-        source: '/uploads/:path*',
-        destination: 'http://localhost:3000/uploads/:path*',
+        source: '/api/:path*',
+        destination: `${API_URL}/:path*`,
       },
     ];
   },
