@@ -476,29 +476,65 @@ export class AdminService {
   }
 
   async updateProductDetail(id: string, data: any) {
-    const detail = await this.productDetailRepo.findOne({
-      where: { id },
-      relations: ['product', 'color', 'size'],
-    });
+  const detail = await this.productDetailRepo.findOne({
+    where: { id },
+    relations: ['product', 'color', 'size'],
+  });
 
-    if (!detail) {
-      throw new NotFoundException('Product detail not found');
-    }
-
-    // Cập nhật các field hợp lệ
-    if (data.sku !== undefined) detail.sku = data.sku;
-    if (data.quantity !== undefined) detail.quantity = data.quantity;
-    if (data.skinType !== undefined) detail.skinType = data.skinType;
-    if (data.colorId !== undefined) detail.colorId = data.colorId;
-    if (data.sizeId !== undefined) detail.sizeId = data.sizeId;
-    if (data.description !== undefined) detail.description = data.description;
-    if (data.ingredients !== undefined) detail.ingredients = data.ingredients;
-    if (data.usage !== undefined) detail.usage = data.usage;
-    if (data.benefits !== undefined) detail.benefits = data.benefits;
-    if (data.storage !== undefined) detail.storage = data.storage;
-
-    return this.productDetailRepo.save(detail);
+  if (!detail) {
+    throw new NotFoundException('Product detail not found');
   }
+
+  // ✅ Build update object với convert types
+  const updateData: any = {};
+
+  if (data.sku !== undefined) updateData.sku = data.sku;
+  if (data.quantity !== undefined) updateData.quantity = Number(data.quantity);
+  if (data.skinType !== undefined) updateData.skinType = data.skinType;
+
+  // ✅ Convert colorId (string → number hoặc null)
+  if (data.colorId !== undefined) {
+    updateData.colorId =
+      data.colorId === '' || data.colorId === null
+        ? null
+        : Number(data.colorId);
+  }
+
+  // ✅ Convert sizeId (string → number hoặc null)
+  if (data.sizeId !== undefined) {
+    updateData.sizeId =
+      data.sizeId === '' || data.sizeId === null
+        ? null
+        : Number(data.sizeId);
+  }
+
+  if (data.description !== undefined) updateData.description = data.description;
+  if (data.ingredients !== undefined) updateData.ingredients = data.ingredients;
+  if (data.usage !== undefined) updateData.usage = data.usage;
+  if (data.benefits !== undefined) updateData.benefits = data.benefits;
+  if (data.storage !== undefined) updateData.storage = data.storage;
+
+  console.log('🔍 [UPDATE DETAIL] ID:', id);
+  console.log('🔍 [UPDATE DETAIL] Data:', updateData);
+
+  // ✅ Dùng QueryBuilder để force update trực tiếp vào cột
+  await this.productDetailRepo
+    .createQueryBuilder()
+    .update()
+    .set(updateData)
+    .where('id = :id', { id })
+    .execute();
+
+  // ✅ Load lại để trả data mới
+  const updated = await this.productDetailRepo.findOne({
+    where: { id },
+    relations: ['product', 'color', 'size'],
+  });
+
+  console.log('✅ [UPDATE DETAIL] After:', updated);
+
+  return updated;
+}
 
   async updateProductQuantity(productDetailId: string, quantity: number) {
     await this.productDetailRepo.update(productDetailId, { quantity });
