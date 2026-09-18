@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { User, Lock, Eye, EyeOff, AlertCircle, Leaf } from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
+import { API_CONFIG } from '@/common/constants/api.constants';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 
@@ -23,16 +24,16 @@ export default function AdminLogin() {
 
     try {
       console.log('📤 [ADMIN LOGIN] Attempt:', { username, password });
-      
-      const response = await axios.post('http://localhost:3000/api/admin/login', {
+
+      const response = await axios.post(`${API_CONFIG.BASE_URL}/admin/login`, {
         username,
         password,
       });
 
       console.log('📦 [ADMIN LOGIN] Response:', response.data);
-      
+
       const data = response.data;
-      
+
       const accessToken = data.accessToken || data.data?.accessToken;
       const refreshToken = data.refreshToken || data.data?.refreshToken;
       const user = data.user || data.data?.user;
@@ -47,12 +48,12 @@ export default function AdminLogin() {
 
       // ✅ Lưu token
       localStorage.setItem('admin_token', accessToken);
-      
+
       // ✅ THÊM: Lưu refresh token
       if (refreshToken) {
         localStorage.setItem('refresh_token', refreshToken);
       }
-      
+
       // ✅ Lưu user
       const userData = {
         id: user?.id || 0,
@@ -61,23 +62,23 @@ export default function AdminLogin() {
         fullName: user?.fullName || user?.username || username,
         email: user?.email || '',
       };
-      
+
       localStorage.setItem('admin_user', JSON.stringify(userData));
       localStorage.setItem('user_role', userData.role);
 
       console.log('✅ [ADMIN LOGIN] Success!');
       toast.success('Đăng nhập thành công!');
-      
+
       router.push('/admin');
-      
+
     } catch (err: any) {
       console.error('❌ [ADMIN LOGIN] Error:', err);
       console.error('❌ [ADMIN LOGIN] Error response:', err.response?.data);
-      
-      const errorMessage = err.response?.data?.message || 
-                          err.response?.data?.error || 
+
+      const errorMessage = err.response?.data?.message ||
+                          err.response?.data?.error ||
                           'Sai tên đăng nhập hoặc mật khẩu';
-      
+
       setError(errorMessage);
       setLoading(false);
     }
