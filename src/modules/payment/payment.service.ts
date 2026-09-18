@@ -211,14 +211,18 @@ export class PaymentService {
   async momoIpnHandler(body: any) {
     this.logger.log(`MoMo IPN received: ${JSON.stringify(body)}`);
     
-    if (!this.verifyMomoSignature(body)) {
-      return { message: 'Invalid signature' };
-    }
-    
     const { orderId, resultCode, transId, message } = body;
     
-    // ✅ Tìm order bằng orderCode (vì MoMo gửi về orderId là mã duy nhất đã tạo)
-    // Cần tìm bằng cách parse orderCode từ orderId
+    // ✅ CHỈ verify signature khi thanh toán THÀNH CÔNG (resultCode === 0)
+    if (resultCode === 0) {
+      if (!this.verifyMomoSignature(body)) {
+        return { message: 'Invalid signature' };
+      }
+    } else {
+      this.logger.log('Skipping signature verify for cancelled/failed IPN');
+    }
+    
+    // ✅ Parse orderCode
     let orderCode = orderId;
     if (orderId && orderId.includes('_')) {
       orderCode = orderId.split('_')[0];
@@ -244,14 +248,21 @@ export class PaymentService {
   async momoReturn(query: any) {
     this.logger.log(`MoMo return received: ${JSON.stringify(query)}`);
     
-    if (!this.verifyMomoSignature(query)) {
-      return {
-        success: false,
-        message: 'Invalid signature',
-      };
-    }
-    
     const { orderId, resultCode, message, transId } = query;
+    
+    // ✅ CHỈ verify signature khi thanh toán THÀNH CÔNG (resultCode === '0')
+    // Khi user hủy hoặc lỗi, MoMo có thể gửi signature khác → bỏ qua verify
+    if (resultCode === '0') {
+      if (!this.verifyMomoSignature(query)) {
+        this.logger.warn('Invalid signature for successful payment');
+        return {
+          success: false,
+          message: 'Invalid signature',
+        };
+      }
+    } else {
+      this.logger.log('Skipping signature verify for cancelled/failed payment');
+    }
     
     // ✅ Parse orderCode từ orderId
     let orderCode = orderId;
