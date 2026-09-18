@@ -22,6 +22,8 @@ async function bootstrap() {
       'http://localhost:3000',
       'http://127.0.0.1:3001',
       'http://127.0.0.1:3000',
+      'https://ai-cosmetics-project.vercel.app',
+      /^https:\/\/ai-cosmetics-project.*\.vercel\.app$/,
     ],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
