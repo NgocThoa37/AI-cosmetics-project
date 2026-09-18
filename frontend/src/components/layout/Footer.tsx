@@ -77,7 +77,6 @@ export const Footer: React.FC = () => {
             <ul className="space-y-2 text-xs">
               <li><button onClick={handleScrollTop} className="hover:text-brand-accent transition-colors">Trang chủ</button></li>
               <li><Link href="/products" className="hover:text-brand-accent transition-colors">Sản phẩm nổi bật</Link></li>
-              <li><Link href="/brands" className="hover:text-brand-accent transition-colors">Thương hiệu đối tác</Link></li>
             </ul>
           </div>
 
