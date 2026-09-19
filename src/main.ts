@@ -15,7 +15,6 @@ const rateLimit = require('express-rate-limit');
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   
-  // ✅ 1. CORS PHẢI ĐẶT ĐẦU TIÊN
   app.enableCors({
     origin: [
       'http://localhost:3001',
@@ -23,6 +22,8 @@ async function bootstrap() {
       'http://127.0.0.1:3001',
       'http://127.0.0.1:3000',
       'https://ai-cosmetics-project.vercel.app',
+      'https://lumiere.id.vn',
+      'https://www.lumiere.id.vn',
       /^https:\/\/ai-cosmetics-project.*\.vercel\.app$/,
     ],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
