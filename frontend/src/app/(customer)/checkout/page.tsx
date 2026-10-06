@@ -175,6 +175,14 @@ function CheckoutContent() {
       } else if (paymentMethod === PaymentMethod.VNPAY) {
         const vnpayRes = await paymentService.createVnpayPayment(order.id, `${window.location.origin}/payment/vnpay-return`);
         window.location.href = vnpayRes.payUrl;
+      } else if (paymentMethod === PaymentMethod.PAYOS) {
+        // 👈 THÊM MỚI: xử lý PayOS
+        const payosRes = await paymentService.createPayOsPayment(order.id);
+        if (payosRes.success && payosRes.checkoutUrl) {
+          window.location.href = payosRes.checkoutUrl;
+        } else {
+          toast.error(payosRes.message || 'Không thể tạo thanh toán PayOS');
+        }
       } else {
         router.push(`/account/orders/${order.id}?success=true`);
         toast.success('Đặt hàng thành công!');
@@ -258,6 +266,7 @@ function CheckoutContent() {
                     { value: PaymentMethod.COD, label: 'Thanh toán khi nhận hàng (COD)' },
                     { value: PaymentMethod.MOMO, label: 'Ví điện tử MoMo' },
                     { value: PaymentMethod.VNPAY, label: 'VNPAY' },
+                    { value: PaymentMethod.PAYOS, label: 'PayOS (QR ngân hàng)' }, // 👈 THÊM MỚI
                   ].map((method) => (
                     <label
                       key={method.value}

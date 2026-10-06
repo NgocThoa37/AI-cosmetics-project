@@ -9,7 +9,12 @@ import { useCustomerAuth } from '@/hooks/useCustomerAuth';
 import AccountSidebar from '@/components/customer/AccountSidebar';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchMyOrders } from '@/store/slices/order.slice';
-import { formatCurrency, formatDate, getOrderStatusLabel, getOrderStatusColor } from '@/helpers/format.helper';
+import {
+  formatCurrency,
+  formatDate,
+  getOrderStatusLabel,
+  getOrderStatusColor,
+} from '@/helpers/format.helper';
 import { Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -32,36 +37,69 @@ function OrdersContent() {
   const [filter, setFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // ✅ Lấy token và message từ URL (khi redirect từ MoMo)
+  // ✅ Lấy query params từ URL (khi redirect từ MoMo/VNPay/PayOS)
   const tokenFromUrl = searchParams.get('token');
   const paymentMessage = searchParams.get('message');
-  const paymentStatus = searchParams.get('payment');
+  const paymentStatus = searchParams.get('payment'); // 'success' | 'failed'
+  const paymentMethod = searchParams.get('method'); // 'MoMo' | 'VNPAY' | 'PayOS'
 
   useEffect(() => {
+    // 1. Xử lý token nếu có (từ MoMo/PayOS redirect)
     if (tokenFromUrl) {
       localStorage.setItem('customer_token', tokenFromUrl);
-      const newUrl = window.location.pathname + window.location.search.replace(/&?token=[^&]*/, '');
+      const newUrl =
+        window.location.pathname +
+        window.location.search.replace(/&?token=[^&]*/, '');
       router.replace(newUrl);
     }
 
-    if (paymentMessage) {
-      if (paymentStatus === 'success') {
-        toast.success(decodeURIComponent(paymentMessage) || 'Thanh toán thành công!');
-      } else {
-        toast.error(decodeURIComponent(paymentMessage) || 'Thanh toán thất bại');
-      }
-      const newUrl = window.location.pathname + window.location.search.replace(/&?message=[^&]*/, '');
+    // 2. ✅ SỬA: Xử lý toast theo `payment` (success/failed), KHÔNG phụ thuộc `message`
+    if (paymentStatus === 'success') {
+      const methodLabel = paymentMethod ? ` ${paymentMethod}` : '';
+      toast.success(`Thanh toán${methodLabel} thành công!`);
+    } else if (paymentStatus === 'failed') {
+      const methodLabel = paymentMethod ? ` ${paymentMethod}` : '';
+      const errorMessage = paymentMessage
+        ? decodeURIComponent(paymentMessage)
+        : `Thanh toán${methodLabel} thất bại`;
+      toast.error(errorMessage);
+    } else if (paymentMessage) {
+      // Fallback: nếu chỉ có message mà không có payment status
+      toast.error(decodeURIComponent(paymentMessage));
+    }
+
+    // 3. ✅ SỬA: Xóa cả `payment`, `method`, `message` khỏi URL sau khi xử lý
+    if (paymentStatus || paymentMessage) {
+      let newUrl = window.location.pathname + window.location.search;
+      newUrl = newUrl.replace(/&?payment=[^&]*/, '');
+      newUrl = newUrl.replace(/&?method=[^&]*/, '');
+      newUrl = newUrl.replace(/&?message=[^&]*/, '');
+      // Xóa dấu ? hoặc & thừa ở cuối
+      newUrl = newUrl.replace(/[?&]$/, '');
       router.replace(newUrl);
     }
 
+    // 4. Fetch đơn hàng
     if (isAuthenticated) {
       dispatch(fetchMyOrders());
     }
-  }, [isAuthenticated, dispatch, tokenFromUrl, paymentMessage, paymentStatus, router]);
+  }, [
+    isAuthenticated,
+    dispatch,
+    tokenFromUrl,
+    paymentMessage,
+    paymentStatus,
+    paymentMethod,
+    router,
+  ]);
 
-  const filteredOrders = orders?.filter(order => {
+  const filteredOrders = orders?.filter((order) => {
     if (filter !== 'all' && order.orderStatus !== filter) return false;
-    if (searchTerm && !order.orderCode.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+    if (
+      searchTerm &&
+      !order.orderCode.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+      return false;
     return true;
   });
 
@@ -80,7 +118,9 @@ function OrdersContent() {
         <AccountSidebar />
 
         <div className="lg:col-span-3">
-          <h1 className="font-serif text-2xl text-brand-dark mb-6">Đơn hàng của tôi</h1>
+          <h1 className="font-serif text-2xl text-brand-dark mb-6">
+            Đơn hàng của tôi
+          </h1>
 
           <div className="flex flex-wrap gap-2 mb-6 border-b border-brand-warm pb-3">
             {statusTabs.map((tab) => (
@@ -88,7 +128,9 @@ function OrdersContent() {
                 key={tab.key}
                 onClick={() => setFilter(tab.key)}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  filter === tab.key ? 'bg-brand-accent text-white' : 'text-brand-dark/60 hover:text-brand-dark'
+                  filter === tab.key
+                    ? 'bg-brand-accent text-white'
+                    : 'text-brand-dark/60 hover:text-brand-dark'
                 }`}
               >
                 {tab.label}
@@ -97,7 +139,10 @@ function OrdersContent() {
           </div>
 
           <div className="relative mb-6">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-dark/40" />
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-dark/40"
+            />
             <input
               type="text"
               placeholder="Tìm kiếm theo mã đơn hàng"
@@ -125,17 +170,28 @@ function OrdersContent() {
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div>
-                      <p className="font-mono text-sm text-brand-dark/50">{order.orderCode}</p>
-                      <p className="text-xs text-brand-dark/40">{formatDate(order.createdAt)}</p>
+                      <p className="font-mono text-sm text-brand-dark/50">
+                        {order.orderCode}
+                      </p>
+                      <p className="text-xs text-brand-dark/40">
+                        {formatDate(order.createdAt)}
+                      </p>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${getOrderStatusColor(order.orderStatus)}`}>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-bold ${getOrderStatusColor(
+                        order.orderStatus,
+                      )}`}
+                    >
                       {getOrderStatusLabel(order.orderStatus)}
                     </span>
                   </div>
 
                   <div className="flex gap-4 overflow-x-auto pb-3">
                     {order.details?.slice(0, 3).map((detail) => (
-                      <div key={detail.id} className="flex flex-col items-center gap-1 flex-shrink-0 w-16">
+                      <div
+                        key={detail.id}
+                        className="flex flex-col items-center gap-1 flex-shrink-0 w-16"
+                      >
                         <div className="w-14 h-14 rounded-lg overflow-hidden bg-white border border-brand-warm">
                           <Image
                             src={getProductImage(detail)}
@@ -144,7 +200,8 @@ function OrdersContent() {
                             height={56}
                             className="w-full h-full object-cover"
                             onError={(e) => {
-                              (e.target as HTMLImageElement).src = '/placeholder-product.jpg';
+                              (e.target as HTMLImageElement).src =
+                                '/placeholder-product.jpg';
                             }}
                           />
                         </div>
@@ -162,7 +219,9 @@ function OrdersContent() {
 
                   <div className="flex justify-between items-center mt-3 pt-3 border-t border-brand-warm/50">
                     <span className="text-sm">Thành tiền</span>
-                    <span className="font-bold text-brand-accent">{formatCurrency(order.totalAmount)}</span>
+                    <span className="font-bold text-brand-accent">
+                      {formatCurrency(order.totalAmount)}
+                    </span>
                   </div>
                 </Link>
               ))}
@@ -177,11 +236,13 @@ function OrdersContent() {
 // ✅ Export default với Suspense wrapper
 export default function OrdersPage() {
   return (
-    <Suspense fallback={
-      <div className="flex justify-center py-20">
-        <LoadingSpinner size="lg" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex justify-center py-20">
+          <LoadingSpinner size="lg" />
+        </div>
+      }
+    >
       <OrdersContent />
     </Suspense>
   );

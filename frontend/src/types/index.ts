@@ -18,6 +18,7 @@ export enum PaymentMethod {
   COD = 'cod',
   MOMO = 'momo',
   VNPAY = 'vnpay',
+  PAYOS = 'payos',
 }
 
 export enum OrderStatus {
