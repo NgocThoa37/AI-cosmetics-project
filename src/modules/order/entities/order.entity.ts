@@ -1,4 +1,11 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
+} from 'typeorm';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { Customer } from '../../customers/entities/customer.entity';
 import { OrderDetail } from './order-detail.entity';
@@ -8,6 +15,7 @@ export enum PaymentMethod {
   COD = 'cod',
   BANKING = 'banking',
   VNPAY = 'vnpay',
+  PAYOS = 'payos', // 👈 ĐÃ SỬA: viết thường cho nhất quán
 }
 
 export enum PaymentStatus {
@@ -43,7 +51,13 @@ export class Order extends BaseEntity {
   @Column({ name: 'shipping_phone', length: 15 })
   shippingPhone!: string;
 
-  @Column({ name: 'shipping_fee', type: 'decimal', precision: 15, scale: 2, default: 0 })
+  @Column({
+    name: 'shipping_fee',
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    default: 0,
+  })
   shippingFee!: number;
 
   @Column({ name: 'total_amount', type: 'decimal', precision: 15, scale: 2 })
@@ -57,6 +71,10 @@ export class Order extends BaseEntity {
 
   @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.PENDING })
   orderStatus!: OrderStatus;
+
+  // 👇 THÊM MỚI: mã đơn hàng PayOS (9 chữ số) để webhook tra cứu
+  @Column({ name: 'payos_order_code', type: 'varchar', length: 20, nullable: true })
+  payosOrderCode!: string | null;
 
   @Column({ type: 'text', nullable: true })
   note!: string;
@@ -76,10 +94,10 @@ export class Order extends BaseEntity {
   @Column({ name: 'estimated_delivered_date', type: 'date', nullable: true })
   estimatedDeliveredDate!: Date;
 
-  @ManyToOne(() => Customer, customer => customer.orders)
+  @ManyToOne(() => Customer, (customer) => customer.orders)
   @JoinColumn({ name: 'customer_id' })
   customer!: Customer;
 
-  @OneToMany(() => OrderDetail, detail => detail.order)
+  @OneToMany(() => OrderDetail, (detail) => detail.order)
   details!: OrderDetail[];
 }

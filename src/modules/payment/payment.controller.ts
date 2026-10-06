@@ -1,14 +1,30 @@
-import { Controller, Post, Body, Get, Query, Res, HttpStatus, Req, BadRequestException, NotFoundException, Param } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Query,
+  Res,
+  HttpStatus,
+  Req,
+  BadRequestException,
+  NotFoundException,
+  Param,
+} from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { CreateMomoPaymentDto } from './dto/create-momo-payment.dto';
+// 👇 THÊM MỚI: import DTO PayOS
+import { CreatePayOSPaymentDto } from './dto/create-payos-payment.dto';
 import type { Response, Request } from 'express';
 
 @Controller('payment')
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
-  // ==================== MOMO ROUTES ====================
-  
+  // ==================================================================
+  // ==================== MOMO ROUTES (GIỮ NGUYÊN) ====================
+  // ==================================================================
+
   @Post('momo')
   async createMomoPayment(@Body() dto: CreateMomoPaymentDto) {
     console.log('🔍 [MOMO] orderId nhận được:', dto?.orderId);
@@ -23,28 +39,36 @@ export class PaymentController {
   @Get('momo-return')
   async momoReturn(@Query() query, @Req() req: Request, @Res() res: Response) {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
-    
+
     const tokenFromCookie = req.cookies?.access_token || '';
     const tokenFromQuery = query.token || '';
     const token = tokenFromCookie || tokenFromQuery || '';
-    
+
     console.log('🔍 [MOMO] Token từ cookie:', tokenFromCookie ? 'CÓ' : 'KHÔNG');
     console.log('🔍 [MOMO] Token từ query:', tokenFromQuery ? 'CÓ' : 'KHÔNG');
-    
+
     try {
       const result = await this.paymentService.momoReturn(query);
       let orderCode = result.orderCode || query.orderId || '';
       if (orderCode && orderCode.includes('_')) {
         orderCode = orderCode.split('_')[0];
       }
-      
-      const errorMessage = result.message || query.message || 'Thanh toán thất bại';
-      
-      // ✅ SỬA: Redirect về DANH SÁCH đơn hàng, không phải chi tiết
+
+      const errorMessage =
+        result.message || query.message || 'Thanh toán thất bại';
+
       if (result.success) {
-        return res.redirect(`${frontendUrl}/account/orders?payment=success&method=MoMo&token=${encodeURIComponent(token)}`);
+        return res.redirect(
+          `${frontendUrl}/account/orders?payment=success&method=MoMo&token=${encodeURIComponent(
+            token,
+          )}`,
+        );
       } else {
-        return res.redirect(`${frontendUrl}/account/orders?payment=failed&message=${encodeURIComponent(errorMessage)}&token=${encodeURIComponent(token)}`);
+        return res.redirect(
+          `${frontendUrl}/account/orders?payment=failed&message=${encodeURIComponent(
+            errorMessage,
+          )}&token=${encodeURIComponent(token)}`,
+        );
       }
     } catch (error: any) {
       let orderCode = query.orderId || query.orderCode || '';
@@ -52,15 +76,24 @@ export class PaymentController {
         orderCode = orderCode.split('_')[0];
       }
       const errorMessage = error.message || 'Lỗi thanh toán';
-      // ✅ SỬA: Redirect về DANH SÁCH đơn hàng
-      return res.redirect(`${frontendUrl}/account/orders?payment=failed&message=${encodeURIComponent(errorMessage)}&token=${encodeURIComponent(token)}`);
+      return res.redirect(
+        `${frontendUrl}/account/orders?payment=failed&message=${encodeURIComponent(
+          errorMessage,
+        )}&token=${encodeURIComponent(token)}`,
+      );
     }
   }
 
-  // ==================== VNPAY ROUTES ====================
-  
+  // ==================================================================
+  // ==================== VNPAY ROUTES (GIỮ NGUYÊN) ===================
+  // ==================================================================
+
   @Post('vnpay')
-  async createVNPayPayment(@Body('orderId') orderId: number, @Req() req: Request, @Res() res: Response) {
+  async createVNPayPayment(
+    @Body('orderId') orderId: number,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
     try {
       if (!orderId || isNaN(orderId)) {
         throw new BadRequestException('Invalid orderId');
@@ -77,18 +110,23 @@ export class PaymentController {
         ipAddr = '127.0.0.1';
       }
       ipAddr = ipAddr.replace(/^::ffff:/, '');
-      
+
       console.log('IP Address:', ipAddr);
-      
-      const result = await this.paymentService.createVNPayPayment(orderId, ipAddr);
+
+      const result = await this.paymentService.createVNPayPayment(
+        orderId,
+        ipAddr,
+      );
       return res.status(HttpStatus.OK).json({
         success: true,
         data: result,
       });
     } catch (error: any) {
-      const status = error instanceof BadRequestException || error instanceof NotFoundException 
-        ? HttpStatus.BAD_REQUEST 
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+      const status =
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+          ? HttpStatus.BAD_REQUEST
+          : HttpStatus.INTERNAL_SERVER_ERROR;
       return res.status(status).json({
         success: false,
         message: error.message,
@@ -114,24 +152,132 @@ export class PaymentController {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
     try {
       const result = await this.paymentService.handleVNPayReturn(query);
-      
-      // ✅ SỬA: Redirect về DANH SÁCH đơn hàng, không phải chi tiết
+
       if (result.success) {
-        return res.redirect(`${frontendUrl}/account/orders?payment=success&method=VNPAY`);
+        return res.redirect(
+          `${frontendUrl}/account/orders?payment=success&method=VNPAY`,
+        );
       } else {
         const errorMessage = result.message || 'Thanh toán VNPAY thất bại';
-        return res.redirect(`${frontendUrl}/account/orders?payment=failed&message=${encodeURIComponent(errorMessage)}`);
+        return res.redirect(
+          `${frontendUrl}/account/orders?payment=failed&message=${encodeURIComponent(
+            errorMessage,
+          )}`,
+        );
       }
     } catch (error: any) {
       const errorMessage = error.message || 'Lỗi thanh toán';
-      return res.redirect(`${frontendUrl}/account/orders?payment=failed&message=${encodeURIComponent(errorMessage)}`);
+      return res.redirect(
+        `${frontendUrl}/account/orders?payment=failed&message=${encodeURIComponent(
+          errorMessage,
+        )}`,
+      );
     }
   }
 
-  // ==================== COMMON ROUTES ====================
-  
+  // ==================================================================
+  // ==================== PAYOS ROUTES (THÊM MỚI) =====================
+  // ==================================================================
+
+  /**
+   * Tạo link thanh toán PayOS
+   * POST /payment/payos
+   * Body: { orderId: number, returnUrl?: string }
+   */
+  @Post('payos')
+  async createPayOSPayment(@Body() dto: CreatePayOSPaymentDto) {
+    console.log('🔍 [PAYOS] orderId nhận được:', dto?.orderId);
+    return this.paymentService.createPayOSPayment(dto.orderId, dto.returnUrl);
+  }
+
+  /**
+   * PayOS webhook - server PayOS gọi về khi có giao dịch
+   * POST /payment/payos-webhook
+   * ⚠️ BẮT BUỘC phải trả về { success: true } cho PayOS
+   */
+  @Post('payos-webhook')
+  async payosWebhook(@Body() body: any) {
+    return this.paymentService.payosWebhookHandler(body);
+  }
+
+  /**
+   * PayOS redirect user về sau khi thanh toán
+   * GET /payment/payos-return
+   * Giống MoMo: redirect về /account/orders
+   */
+  @Get('payos-return')
+  async payosReturn(
+    @Query() query: any,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+
+    const tokenFromCookie = req.cookies?.access_token || '';
+    const tokenFromQuery = query.token || '';
+    const token = tokenFromCookie || tokenFromQuery || '';
+
+    console.log('🔍 [PAYOS] Token từ cookie:', tokenFromCookie ? 'CÓ' : 'KHÔNG');
+    console.log('🔍 [PAYOS] Token từ query:', tokenFromQuery ? 'CÓ' : 'KHÔNG');
+
+    try {
+      const result = await this.paymentService.payosReturn(query);
+
+      if (result.success) {
+        return res.redirect(
+          `${frontendUrl}/account/orders?payment=success&method=PayOS&token=${encodeURIComponent(
+            token,
+          )}`,
+        );
+      } else {
+        const errorMessage = result.message || 'Thanh toán PayOS thất bại';
+        return res.redirect(
+          `${frontendUrl}/account/orders?payment=failed&message=${encodeURIComponent(
+            errorMessage,
+          )}&token=${encodeURIComponent(token)}`,
+        );
+      }
+    } catch (error: any) {
+      const errorMessage = error.message || 'Lỗi thanh toán';
+      return res.redirect(
+        `${frontendUrl}/account/orders?payment=failed&message=${encodeURIComponent(
+          errorMessage,
+        )}&token=${encodeURIComponent(token)}`,
+      );
+    }
+  }
+
+  /**
+   * PayOS redirect user về khi hủy thanh toán
+   * GET /payment/payos-cancel
+   */
+  @Get('payos-cancel')
+  async payosCancel(
+    @Query() query: any,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+    const tokenFromCookie = req.cookies?.access_token || '';
+    const tokenFromQuery = query.token || '';
+    const token = tokenFromCookie || tokenFromQuery || '';
+
+    return res.redirect(
+      `${frontendUrl}/account/orders?payment=failed&method=PayOS&message=${encodeURIComponent(
+        'Người dùng đã hủy thanh toán',
+      )}&token=${encodeURIComponent(token)}`,
+    );
+  }
+
+  // ==================================================================
+  // ==================== COMMON ROUTES (GIỮ NGUYÊN) ==================
+  // ==================================================================
+
   @Get('status/:orderId')
-  async getPaymentStatus(@Param('orderId') orderId: number, @Res() res: Response) {
+  async getPaymentStatus(
+    @Param('orderId') orderId: number,
+    @Res() res: Response,
+  ) {
     try {
       if (!orderId || isNaN(orderId)) {
         throw new BadRequestException('Invalid orderId');
@@ -142,7 +288,10 @@ export class PaymentController {
         data: result,
       });
     } catch (error: any) {
-      const status = error instanceof NotFoundException ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
+      const status =
+        error instanceof NotFoundException
+          ? HttpStatus.NOT_FOUND
+          : HttpStatus.BAD_REQUEST;
       return res.status(status).json({
         success: false,
         message: error.message,
