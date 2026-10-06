@@ -66,6 +66,7 @@ async function bootstrap() {
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
     prefix: '/uploads/',
   });
+  app.useStaticAssets(join(__dirname, '..', 'public'));
   
   // ✅ 7. Swagger
   const config = new DocumentBuilder()
