@@ -55,6 +55,12 @@ async function bootstrap() {
     legacyHeaders: false,
   });
   app.use('/api', limiter);
+
+  // ✅ 6. Static assets
+  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+    prefix: '/uploads/',
+  });
+  app.useStaticAssets(join(__dirname, '..', 'public'));
   
   // ✅ 5. Global prefix và các config khác
   app.setGlobalPrefix('api');
@@ -62,11 +68,6 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new TransformInterceptor(), new LoggingInterceptor());
   
-  // ✅ 6. Static assets
-  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
-    prefix: '/uploads/',
-  });
-  app.useStaticAssets(join(__dirname, '..', 'public'));
   
   // ✅ 7. Swagger
   const config = new DocumentBuilder()
