@@ -3,7 +3,7 @@ import {
   Logger,
   BadRequestException,
   NotFoundException,
-  Inject, // 👈 THÊM MỚI: để inject PayOS provider
+  Inject,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -17,7 +17,6 @@ import {
 import * as crypto from 'crypto';
 import axios from 'axios';
 import { VNPayUtil } from '../../utils/vnpay.util';
-// 👇 THÊM MỚI: import PayOS và token provider
 import { PayOS } from '@payos/node';
 import { PAYOS_CLIENT } from './payos.provider';
 
@@ -30,10 +29,9 @@ export class PaymentService {
   constructor(
     private configService: ConfigService,
     @InjectRepository(Order) private orderRepo: Repository<Order>,
-    // 👇 THÊM MỚI: inject PayOS client
     @Inject(PAYOS_CLIENT) private readonly payOS: PayOS,
   ) {
-    // ==================== GIỮ NGUYÊN: Config MoMo ====================
+    // ==================== Config MoMo ====================
     this.momoConfig = {
       accessKey: this.configService.get('MOMO_ACCESS_KEY'),
       secretKey: this.configService.get('MOMO_SECRET_KEY'),
@@ -45,7 +43,7 @@ export class PaymentService {
         this.configService.get('MOMO_REQUEST_TYPE') || 'captureWallet',
     };
 
-    // ==================== GIỮ NGUYÊN: Config VNPay ====================
+    // ==================== Config VNPay ====================
     this.vnpayConfig = {
       tmnCode: this.configService.get('VNP_TMNCODE'),
       hashSecret: this.configService.get('VNP_HASHSECRET'),
@@ -135,7 +133,6 @@ export class PaymentService {
   }
 
   async createMomoPayment(orderId: number, returnUrl?: string) {
-    // ... giữ nguyên 100% code cũ của bạn
     const order = await this.orderRepo.findOne({ where: { id: orderId } });
     if (!order) {
       throw new BadRequestException('Order not found');
@@ -241,7 +238,6 @@ export class PaymentService {
   }
 
   async momoIpnHandler(body: any) {
-    // ... giữ nguyên 100% code cũ của bạn
     this.logger.log(`MoMo IPN received: ${JSON.stringify(body)}`);
 
     const { orderId, resultCode, transId, message } = body;
@@ -280,7 +276,6 @@ export class PaymentService {
   }
 
   async momoReturn(query: any) {
-    // ... giữ nguyên 100% code cũ của bạn
     this.logger.log(`MoMo return received: ${JSON.stringify(query)}`);
 
     const { orderId, resultCode, message, transId } = query;
@@ -333,7 +328,6 @@ export class PaymentService {
   }
 
   async getPaymentStatus(orderId: number) {
-    // ... giữ nguyên 100% code cũ của bạn
     const order = await this.orderRepo.findOne({
       where: { id: orderId },
       select: [
@@ -359,7 +353,6 @@ export class PaymentService {
   // ==================================================================
 
   async createVNPayPayment(orderId: number, ipAddr: string) {
-    // ... giữ nguyên 100% code cũ của bạn
     const order = await this.orderRepo.findOne({ where: { id: orderId } });
     if (!order) {
       throw new NotFoundException('Order not found');
@@ -390,7 +383,6 @@ export class PaymentService {
   }
 
   async handleVNPayIpn(vnpParams: any) {
-    // ... giữ nguyên 100% code cũ của bạn
     this.logger.log(`VNPay IPN received: ${JSON.stringify(vnpParams)}`);
 
     const isValid = VNPayUtil.verifyReturnUrl(vnpParams, this.vnpayConfig);
@@ -448,7 +440,6 @@ export class PaymentService {
   }
 
   async handleVNPayReturn(vnpParams: any) {
-    // ... giữ nguyên 100% code cũ của bạn
     const isValid = VNPayUtil.verifyReturnUrl(vnpParams, this.vnpayConfig);
     const responseCode = vnpParams['vnp_ResponseCode'];
     const txnRef = vnpParams['vnp_TxnRef'];
@@ -489,56 +480,49 @@ export class PaymentService {
   }
 
   // ==================================================================
-  // ==================== PAYOS METHODS (THÊM MỚI) ====================
+  // ==================== PAYOS METHODS ===============================
   // ==================================================================
 
   /**
    * Tạo link thanh toán PayOS
-   * @param orderId ID đơn hàng trong DB
-   * @param returnUrl URL quay về sau khi thanh toán (tùy chọn)
    */
   async createPayOSPayment(orderId: number, returnUrl?: string) {
-    // 1. Tìm đơn hàng
     const order = await this.orderRepo.findOne({ where: { id: orderId } });
     if (!order) {
       throw new NotFoundException('Order not found');
     }
 
-    // 2. Kiểm tra đã thanh toán chưa
     if (order.paymentStatus === PaymentStatus.PAID) {
       throw new BadRequestException('Order already paid');
     }
 
-    // 3. PayOS yêu cầu orderCode là số nguyên dương, tối đa 9 chữ số
-    //    → Dùng timestamp cắt 9 số để đảm bảo unique
     const payosOrderCode = Number(String(Date.now()).slice(-9));
     const amount = Math.floor(order.totalAmount);
 
-    // 4. PayOS yêu cầu tối thiểu 2.000 VND
     if (amount < 2000) {
       throw new BadRequestException('Số tiền tối thiểu là 2.000 VND');
     }
 
-    // 5. Tạo payload gửi PayOS
+    // ✅ ĐÃ SỬA: thêm /api vào returnUrl và cancelUrl
     const paymentData = {
       orderCode: payosOrderCode,
       amount,
-      description: `Thanh toan don ${order.orderCode}`.slice(0, 25), 
+      description: `Thanh toan don ${order.orderCode}`.slice(0, 25),
       returnUrl:
         returnUrl ||
-        `${process.env.BACKEND_URL || 'http://localhost:3000'}/payment/payos-return`,
+        `${
+          process.env.BACKEND_URL || 'http://localhost:3000'
+        }/api/payment/payos-return`,
       cancelUrl: `${
         process.env.BACKEND_URL || 'http://localhost:3000'
-      }/payment/payos-cancel`,
+      }/api/payment/payos-cancel`,
     };
 
     try {
-      // 6. Gọi PayOS API tạo link
       const paymentLink = await this.payOS.paymentRequests.create(
         paymentData,
       );
 
-      // 7. Lưu payosOrderCode vào DB để webhook tra cứu
       order.paymentMethod = PaymentMethod.PAYOS;
       order.payosOrderCode = String(payosOrderCode);
       await this.orderRepo.save(order);
@@ -547,7 +531,6 @@ export class PaymentService {
         `✅ Tạo link PayOS thành công: orderId=${order.id}, payosOrderCode=${payosOrderCode}`,
       );
 
-      // 8. Trả về cho Frontend
       return {
         success: true,
         checkoutUrl: paymentLink.checkoutUrl,
@@ -566,12 +549,10 @@ export class PaymentService {
 
   /**
    * Xử lý webhook từ PayOS khi thanh toán thành công
-   * PayOS sẽ POST về endpoint này mỗi khi có giao dịch
    */
   async payosWebhookHandler(body: any) {
     this.logger.log(`PayOS webhook received: ${JSON.stringify(body)}`);
 
-    // 1. Verify chữ ký webhook (BẮT BUỘC — tránh request giả mạo)
     let webhookData: any;
     try {
       webhookData = this.payOS.webhooks.verify(body);
@@ -587,7 +568,6 @@ export class PaymentService {
       `💰 PayOS thanh toán thành công: orderCode=${orderCode}, amount=${amount}, ref=${reference}`,
     );
 
-    // 2. Tìm đơn hàng theo payosOrderCode
     const order = await this.orderRepo.findOne({
       where: { payosOrderCode: String(orderCode) },
     });
@@ -596,11 +576,9 @@ export class PaymentService {
       this.logger.error(
         `Không tìm thấy đơn hàng với payosOrderCode=${orderCode}`,
       );
-      // Vẫn trả success: true để PayOS không retry liên tục
       return { success: true, message: 'Order not found but acknowledged' };
     }
 
-    // 3. Cập nhật trạng thái nếu chưa PAID (tránh duplicate khi webhook retry)
     if (order.paymentStatus !== PaymentStatus.PAID) {
       order.paymentStatus = PaymentStatus.PAID;
       order.orderStatus = OrderStatus.CONFIRMED;
@@ -617,21 +595,19 @@ export class PaymentService {
       this.logger.log(`ℹ️ Order ${order.id} đã PAID trước đó, bỏ qua`);
     }
 
-    // 4. BẮT BUỘC phải trả về { success: true }
     return { success: true };
   }
 
   /**
    * Xử lý khi user quay về từ PayOS (return URL)
-   * Chỉ dùng để redirect user, KHÔNG cập nhật đơn hàng ở đây
-   * (việc cập nhật do webhook đảm nhiệm)
+   * ✅ ĐÃ SỬA: xử lý đủ 3 trường hợp (success / failed / cancelled)
    */
   async payosReturn(query: any) {
     this.logger.log(`PayOS return received: ${JSON.stringify(query)}`);
 
     const { code, id, cancel, status, orderCode } = query;
 
-    // User hủy thanh toán
+    // Trường hợp user hủy
     if (cancel === 'true' || status === 'CANCELLED') {
       return {
         success: false,
@@ -640,7 +616,16 @@ export class PaymentService {
       };
     }
 
-    // PayOS trả code '00' là thành công
+    // Trường hợp thanh toán thất bại (code !== '00')
+    if (code && code !== '00') {
+      return {
+        success: false,
+        message: `Thanh toán thất bại (mã lỗi: ${code})`,
+        orderCode,
+      };
+    }
+
+    // Thành công
     return {
       success: code === '00',
       message: code === '00' ? 'Thanh toán thành công' : 'Thanh toán thất bại',
