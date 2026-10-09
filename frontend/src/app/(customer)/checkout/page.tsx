@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
+import { API_CONFIG } from '@/common/constants/api.constants';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
@@ -45,7 +46,7 @@ function CheckoutContent() {
     }
 
     if (productDetailId) {
-      fetch(`/api/products/details/${productDetailId}`)
+      fetch(`${API_CONFIG.BASE_URL}/products/details/${productDetailId}`)
         .then(res => res.json())
         .then(data => {
           const productData = data.data || data;

@@ -8,6 +8,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchOrderById, cancelOrder } from '@/store/slices/order.slice';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { Button } from '@/components/common/Button';
+import { API_CONFIG } from '@/common/constants/api.constants';
 import AccountSidebar from '@/components/customer/AccountSidebar';
 import {
   formatCurrency,
@@ -61,18 +62,13 @@ export default function OrderDetailPage() {
 
       // ✅ CHỌN API ĐÚNG THEO PHƯƠNG THỨC THANH TOÁN
       let apiUrl = '';
-      if (selectedOrder.paymentMethod === 'vnpay') {
-        apiUrl = '/api/payment/vnpay';
-      } else if (selectedOrder.paymentMethod === 'momo') {
-        apiUrl = '/api/payment/momo';
-      } else if (selectedOrder.paymentMethod === 'payos') {
-        // 👈 THÊM MỚI: PayOS
-        apiUrl = '/api/payment/payos';
-      } else {
-        toast.error('Phương thức thanh toán không hỗ trợ');
-        setIsProcessingPayment(false);
-        return;
-      }
+        if (selectedOrder.paymentMethod === 'vnpay') {
+          apiUrl = `${API_CONFIG.BASE_URL}/payment/vnpay`;
+        } else if (selectedOrder.paymentMethod === 'momo') {
+          apiUrl = `${API_CONFIG.BASE_URL}/payment/momo`;
+        } else if (selectedOrder.paymentMethod === 'payos') {
+          apiUrl = `${API_CONFIG.BASE_URL}/payment/payos`;
+        }
 
       const response = await fetch(apiUrl, {
         method: 'POST',
