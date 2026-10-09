@@ -504,18 +504,15 @@ export class PaymentService {
     }
 
     // ✅ ĐÃ SỬA: thêm /api vào returnUrl và cancelUrl
+    const backendUrl =
+  process.env.BACKEND_URL || 'https://ai-cosmetics-project.onrender.com';
+
     const paymentData = {
       orderCode: payosOrderCode,
       amount,
       description: `Thanh toan don ${order.orderCode}`.slice(0, 25),
-      returnUrl:
-        returnUrl ||
-        `${
-          process.env.BACKEND_URL || 'http://localhost:3000'
-        }/api/payment/payos-return`,
-      cancelUrl: `${
-        process.env.BACKEND_URL || 'http://localhost:3000'
-      }/api/payment/payos-cancel`,
+      returnUrl: `${backendUrl}/api/payment/payos-return`,
+      cancelUrl: `${backendUrl}/api/payment/payos-cancel`,
     };
 
     try {
